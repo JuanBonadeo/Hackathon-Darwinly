@@ -57,11 +57,15 @@ export function PricingSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} id="pricing" className="py-24 px-6 bg-secondary/30">
-      <div className="max-w-4xl mx-auto">
+    <section ref={sectionRef} id="pricing" className="py-24 px-6">
+      <div className="section-shell max-w-5xl mx-auto px-6 py-12 sm:px-10 sm:py-14">
+        <div className="text-center">
+          <span className="section-kicker">Plans</span>
+        </div>
+
         <h2 
           className={cn(
-            "text-3xl sm:text-4xl font-semibold text-center text-accent-foreground mb-16 transition-all duration-700",
+            "mt-5 text-3xl sm:text-4xl font-semibold text-center text-foreground mb-14 transition-all duration-700",
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           )}
         >
@@ -73,7 +77,7 @@ export function PricingSection() {
             <div
               key={plan.name}
               className={cn(
-                "relative p-8 rounded-xl bg-card border transition-all duration-700 hover:scale-[1.02]",
+                "feature-card relative p-8 transition-all duration-700",
                 plan.popular 
                   ? "border-foreground/30 ring-1 ring-foreground/10" 
                   : "border-border",

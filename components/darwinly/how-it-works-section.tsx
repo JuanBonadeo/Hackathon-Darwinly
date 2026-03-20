@@ -50,10 +50,14 @@ export function HowItWorksSection() {
 
   return (
     <section ref={sectionRef} id="how-it-works" className="py-24 px-6">
-      <div className="max-w-5xl mx-auto">
+      <div className="section-shell-alt max-w-6xl mx-auto px-6 py-12 sm:px-10 sm:py-14">
+        <div className="text-center">
+          <span className="section-kicker">Process</span>
+        </div>
+
         <h2 
           className={cn(
-            "text-3xl sm:text-4xl font-semibold text-center text-accent-foreground mb-16 transition-all duration-700",
+            "mt-5 text-3xl sm:text-4xl font-semibold text-center text-foreground mb-14 transition-all duration-700",
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           )}
         >
@@ -65,7 +69,7 @@ export function HowItWorksSection() {
             <div
               key={step.title}
               className={cn(
-                "p-6 rounded-xl bg-card border border-border transition-all duration-700 hover:scale-[1.02]",
+                "feature-card p-6 transition-all duration-700",
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               )}
               style={{ transitionDelay: isVisible ? `${index * 100}ms` : "0ms" }}
@@ -73,7 +77,7 @@ export function HowItWorksSection() {
               <div className="mb-4">
                 <step.icon className="h-6 w-6 text-foreground" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
+              <h3 className="text-lg font-semibold text-foreground mb-2 tracking-tight">
                 {step.title}
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">

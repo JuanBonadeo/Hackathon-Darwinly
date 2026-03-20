@@ -48,7 +48,7 @@
   --muted: #1a1a1a;
   --muted-foreground: #a1a1aa;
   --accent: #d4d4d8;
-  --accent-foreground: #0a0a0a;
+  --accent-foreground: #fafafa;
   --destructive: #7f1d1d;
   --destructive-foreground: #fafafa;
   --border: #27272a;
@@ -106,6 +106,47 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .section-kicker {
+    @apply inline-flex items-center rounded-full border border-border bg-card/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground;
+  }
+
+  .section-shell {
+    @apply relative overflow-hidden rounded-3xl border border-border bg-card/40;
+  }
+
+  .section-shell::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: linear-gradient(to right, color-mix(in oklab, var(--border) 35%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--border) 28%, transparent) 1px, transparent 1px);
+    background-size: 28px 28px;
+    opacity: 0.26;
+    mask-image: radial-gradient(circle at center, black 30%, transparent 82%);
+  }
+
+  .section-shell-alt {
+    @apply relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card/80 to-secondary/40;
+  }
+
+  .feature-card {
+    @apply relative overflow-hidden rounded-2xl border border-border bg-card/90 transition-all duration-500 hover:-translate-y-1;
+  }
+
+  .feature-card::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: color-mix(in oklab, var(--foreground) 75%, transparent);
+    opacity: 0.28;
   }
 }
 

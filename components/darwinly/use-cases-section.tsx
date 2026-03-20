@@ -45,10 +45,14 @@ export function UseCasesSection() {
 
   return (
     <section ref={sectionRef} id="use-cases" className="py-24 px-6">
-      <div className="max-w-5xl mx-auto">
+      <div className="section-shell-alt max-w-6xl mx-auto px-6 py-12 sm:px-10 sm:py-14">
+        <div className="text-center">
+          <span className="section-kicker">Who uses it</span>
+        </div>
+
         <h2 
           className={cn(
-            "text-3xl sm:text-4xl font-semibold text-center text-accent-foreground mb-16 transition-all duration-700",
+            "mt-5 text-3xl sm:text-4xl font-semibold text-center text-foreground mb-14 transition-all duration-700",
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           )}
         >
@@ -60,7 +64,7 @@ export function UseCasesSection() {
             <div
               key={useCase.persona}
               className={cn(
-                "p-8 rounded-xl bg-card border border-border transition-all duration-700 hover:scale-[1.02]",
+                "feature-card p-8 transition-all duration-700",
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               )}
               style={{ transitionDelay: isVisible ? `${index * 100}ms` : "0ms" }}
