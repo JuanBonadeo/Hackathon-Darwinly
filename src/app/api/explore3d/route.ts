@@ -5,6 +5,7 @@ import { fetchTmdbYearly } from "@/lib/apis/tmdb";
 import { fetchWikipediaYearly } from "@/lib/apis/wikipedia";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rate-limit";
 import type { Explore3DResponse, YearlyDataPoint, YearlySeries } from "@/types/strata";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -33,6 +34,17 @@ async function linkUserSearch(userId: string, searchId: string): Promise<void> {
 // ─── Route Handler ────────────────────────────────────────────────────────────
 
 export async function GET(request: Request): Promise<Response> {
+  const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+  const { allowed, remaining } = checkRateLimit(ip);
+  const rateLimitHeaders = { "X-RateLimit-Remaining": String(remaining) };
+
+  if (!allowed) {
+    return Response.json(
+      { error: "Rate limit exceeded", remaining: 0 },
+      { status: 429, headers: rateLimitHeaders },
+    );
+  }
+
   const url = new URL(request.url);
   const raw = url.searchParams.get("q")?.trim();
 
@@ -54,7 +66,7 @@ export async function GET(request: Request): Promise<Response> {
   if (existing) {
     console.log("[Explore3D] DB cache hit", { query });
     if (userId) await linkUserSearch(userId, existing.id);
-    return Response.json(existing.response);
+    return Response.json(existing.response, { headers: rateLimitHeaders });
   }
 
   // ─── Fetch ────────────────────────────────────────────────────────────────
@@ -120,5 +132,5 @@ export async function GET(request: Request): Promise<Response> {
 
   if (userId) await linkUserSearch(userId, saved.id);
 
-  return Response.json(response);
+  return Response.json(response, { headers: rateLimitHeaders });
 }
