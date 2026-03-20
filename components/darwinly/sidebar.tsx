@@ -141,7 +141,7 @@ function SidebarContent({
               }`}
             >
               <span className="flex h-24 w-24 items-center justify-center rounded-2xl bg-sidebar-accent p-2">
-                <Image src="/logo.svg" alt="Darwinly" width={88} height={88} className="h-[88px] w-[88px] object-contain" />
+                <Image src="/logo.svg" alt="Darwinly" width={88} height={88} className="h-auto w-auto object-contain" />
               </span>
             </div>
 
@@ -155,7 +155,7 @@ function SidebarContent({
                 alt="Darwinly"
                 width={380}
                 height={92}
-                className="h-20 w-auto max-w-[220px] object-contain lg:h-24 lg:max-w-[228px]"
+                className="h-auto w-auto max-w-[220px] object-contain lg:max-w-[228px]"
                 priority
               />
             </div>
