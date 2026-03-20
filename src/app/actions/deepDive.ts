@@ -150,15 +150,9 @@ Based on this data and your knowledge, produce a comprehensive analytical report
 
 Respond with ONLY a valid JSON object matching this exact structure (no markdown, no explanation):
 {
-  "origin": "A paragraph describing when and how '${normalizedQuery}' originated as a concept or phenomenon, including historical context and founding figures.",
-  "timeline": "A narrative paragraph tracing its evolution across decades, referencing key milestones, turning points, and how it spread.",
-  "peakDecade": "The decade (e.g. '1990s', '2010s') when it had its greatest cultural or intellectual impact, with brief justification.",
+  "origin": "A sentence describing when and how '${normalizedQuery}' originated as a concept or phenomenon, including historical context and founding figures.",
+  "timeline": "A narrative short paragraph tracing its evolution across decades, referencing key milestones, turning points, and how it spread.",
   "firstMover": "The individual, institution, work, or event widely considered the originator or first mover for '${normalizedQuery}'.",
-  "keyArtifacts": {
-    "books": ["Title by Author (Year)", "Title by Author (Year)", "Title by Author (Year)"],
-    "papers": ["Title by Author (Year)", "Title by Author (Year)", "Title by Author (Year)"],
-    "movies": ["Title (Year)", "Title (Year)", "Title (Year)"]
-  },
   "unexpectedInsight": "One surprising, counterintuitive, or little-known insight about '${normalizedQuery}' that most people would find unexpected."
 }`;
 
