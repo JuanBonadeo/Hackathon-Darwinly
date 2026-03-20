@@ -12,14 +12,6 @@ interface OpenLibraryDoc {
   first_publish_year?: number | null;
 }
 
-// Used by /subjects/{slug}.json endpoint (different shape from search API)
-interface OpenLibrarySubjectWork {
-  title?: string;
-  authors?: { key: string; name: string }[];
-  first_publish_year?: number;
-  edition_count?: number;
-  cover_id?: number;
-}
 
 interface OpenLibraryResponse {
   docs?: OpenLibraryDoc[];
@@ -86,43 +78,45 @@ export async function fetchOpenLibrary(
   }
 }
 
+interface OpenLibrarySearchDoc {
+  title?: string;
+  author_name?: string[];
+  first_publish_year?: number;
+  edition_count?: number;
+  cover_i?: number;
+}
+
 export async function fetchOpenLibraryTopBooks(
   query: string,
   yearStart: number,
   yearEnd: number,
 ): Promise<Artifact[]> {
   try {
-    // /subjects/{slug}.json uses Open Library's curated subject tags — more accurate than free-text search
-    const slug = query.toLowerCase().replace(/\s+/g, "_");
-    const endpoint = `https://openlibrary.org/subjects/${encodeURIComponent(slug)}.json?limit=100`;
+    const endpoint =
+      `https://openlibrary.org/search.json` +
+      `?q=${encodeURIComponent(query)}` +
+      `&sort=editions` +
+      `&fields=title,author_name,first_publish_year,edition_count,cover_i` +
+      `&limit=100`;
 
-    console.log("[OpenLibrary] Fetching top books by subject", { slug, yearStart, yearEnd });
+    console.log("[OpenLibrary] Fetching top books by search", { query, yearStart, yearEnd });
 
     const res = await fetch(endpoint, { cache: "no-store" });
     if (!res.ok) return [];
-    const data = (await res.json()) as { works?: OpenLibrarySubjectWork[] };
+    const data = (await res.json()) as { docs?: OpenLibrarySearchDoc[] };
 
-    // Filter out conference proceedings series — they dominate edition_count unfairly
-    const TITLE_NOISE = ["advances in", "proceedings", "workshop", "symposium", "knowledge discovery in databases"];
-    const AUTHOR_NOISE = ["conference", "society", "symposium", "workshop", "congress", "association"];
-    const isProceedings = (w: OpenLibrarySubjectWork) => {
-      const title = w.title?.toLowerCase() ?? "";
-      const author = w.authors?.[0]?.name?.toLowerCase() ?? "";
-      return TITLE_NOISE.some((n) => title.includes(n)) || AUTHOR_NOISE.some((n) => author.includes(n));
-    };
-
-    return (data.works ?? [])
+    return (data.docs ?? [])
       .filter((d) => {
         const y = d.first_publish_year;
-        return typeof y === "number" && y >= yearStart && y <= yearEnd && !isProceedings(d);
+        return typeof y === "number" && y >= yearStart && y <= yearEnd;
       })
       .map((d) => ({
         title: d.title ?? "Unknown",
-        author: d.authors?.[0]?.name,
+        author: d.author_name?.[0],
         year: d.first_publish_year!,
         score: d.edition_count ?? 0,
-        imageUrl: d.cover_id
-          ? `https://covers.openlibrary.org/b/id/${d.cover_id}-M.jpg`
+        imageUrl: d.cover_i
+          ? `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg`
           : undefined,
         source: "openlibrary" as const,
       }))

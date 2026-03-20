@@ -385,6 +385,8 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   User: 'User',
+  Search: 'Search',
+  UserSearch: 'UserSearch',
   Session: 'Session',
   Account: 'Account',
   Verification: 'Verification'
@@ -403,7 +405,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "session" | "account" | "verification"
+    modelProps: "user" | "search" | "userSearch" | "session" | "account" | "verification"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -478,6 +480,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.UserCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.UserCountAggregateOutputType> | number
+        }
+      }
+    }
+    Search: {
+      payload: Prisma.$SearchPayload<ExtArgs>
+      fields: Prisma.SearchFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SearchFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SearchPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SearchFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SearchPayload>
+        }
+        findFirst: {
+          args: Prisma.SearchFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SearchPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SearchFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SearchPayload>
+        }
+        findMany: {
+          args: Prisma.SearchFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SearchPayload>[]
+        }
+        create: {
+          args: Prisma.SearchCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SearchPayload>
+        }
+        createMany: {
+          args: Prisma.SearchCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SearchCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SearchPayload>[]
+        }
+        delete: {
+          args: Prisma.SearchDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SearchPayload>
+        }
+        update: {
+          args: Prisma.SearchUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SearchPayload>
+        }
+        deleteMany: {
+          args: Prisma.SearchDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SearchUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SearchUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SearchPayload>[]
+        }
+        upsert: {
+          args: Prisma.SearchUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SearchPayload>
+        }
+        aggregate: {
+          args: Prisma.SearchAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSearch>
+        }
+        groupBy: {
+          args: Prisma.SearchGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SearchGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SearchCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SearchCountAggregateOutputType> | number
+        }
+      }
+    }
+    UserSearch: {
+      payload: Prisma.$UserSearchPayload<ExtArgs>
+      fields: Prisma.UserSearchFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.UserSearchFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserSearchPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.UserSearchFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserSearchPayload>
+        }
+        findFirst: {
+          args: Prisma.UserSearchFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserSearchPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.UserSearchFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserSearchPayload>
+        }
+        findMany: {
+          args: Prisma.UserSearchFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserSearchPayload>[]
+        }
+        create: {
+          args: Prisma.UserSearchCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserSearchPayload>
+        }
+        createMany: {
+          args: Prisma.UserSearchCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.UserSearchCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserSearchPayload>[]
+        }
+        delete: {
+          args: Prisma.UserSearchDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserSearchPayload>
+        }
+        update: {
+          args: Prisma.UserSearchUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserSearchPayload>
+        }
+        deleteMany: {
+          args: Prisma.UserSearchDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.UserSearchUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.UserSearchUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserSearchPayload>[]
+        }
+        upsert: {
+          args: Prisma.UserSearchUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserSearchPayload>
+        }
+        aggregate: {
+          args: Prisma.UserSearchAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateUserSearch>
+        }
+        groupBy: {
+          args: Prisma.UserSearchGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UserSearchGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.UserSearchCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UserSearchCountAggregateOutputType> | number
         }
       }
     }
@@ -755,6 +905,29 @@ export const UserScalarFieldEnum = {
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
+export const SearchScalarFieldEnum = {
+  id: 'id',
+  query: 'query',
+  endpoint: 'endpoint',
+  response: 'response',
+  durationMs: 'durationMs',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SearchScalarFieldEnum = (typeof SearchScalarFieldEnum)[keyof typeof SearchScalarFieldEnum]
+
+
+export const UserSearchScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  searchId: 'searchId',
+  searchedAt: 'searchedAt'
+} as const
+
+export type UserSearchScalarFieldEnum = (typeof UserSearchScalarFieldEnum)[keyof typeof UserSearchScalarFieldEnum]
+
+
 export const SessionScalarFieldEnum = {
   id: 'id',
   expiresAt: 'expiresAt',
@@ -808,6 +981,13 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
@@ -822,6 +1002,15 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
 
@@ -866,6 +1055,20 @@ export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaM
 
 
 /**
+ * Reference to a field of type 'Json'
+ */
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+/**
+ * Reference to a field of type 'QueryMode'
+ */
+export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
  * Reference to a field of type 'Int'
  */
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
@@ -876,6 +1079,20 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'In
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Float'
+ */
+export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+/**
+ * Reference to a field of type 'Float[]'
+ */
+export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
 
 /**
@@ -974,6 +1191,8 @@ export type PrismaClientOptions = ({
 }
 export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
+  search?: Prisma.SearchOmit
+  userSearch?: Prisma.UserSearchOmit
   session?: Prisma.SessionOmit
   account?: Prisma.AccountOmit
   verification?: Prisma.VerificationOmit

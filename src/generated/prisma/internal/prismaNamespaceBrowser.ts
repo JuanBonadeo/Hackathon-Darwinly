@@ -52,6 +52,8 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
+  Search: 'Search',
+  UserSearch: 'UserSearch',
   Session: 'Session',
   Account: 'Account',
   Verification: 'Verification'
@@ -84,6 +86,29 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const SearchScalarFieldEnum = {
+  id: 'id',
+  query: 'query',
+  endpoint: 'endpoint',
+  response: 'response',
+  durationMs: 'durationMs',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SearchScalarFieldEnum = (typeof SearchScalarFieldEnum)[keyof typeof SearchScalarFieldEnum]
+
+
+export const UserSearchScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  searchId: 'searchId',
+  searchedAt: 'searchedAt'
+} as const
+
+export type UserSearchScalarFieldEnum = (typeof UserSearchScalarFieldEnum)[keyof typeof UserSearchScalarFieldEnum]
 
 
 export const SessionScalarFieldEnum = {
@@ -139,6 +164,13 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
@@ -153,4 +185,13 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 

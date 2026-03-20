@@ -57,20 +57,11 @@ export interface Artifact {
   source: "openlibrary" | "semanticscholar" | "tmdb";
 }
 
-export interface DecadeArtifacts {
-  decade: number;
-  book?: Artifact;
-  paper?: Artifact;
-  movie?: Artifact;
-}
-
 export interface ArtifactsResponse {
   query: string;
-  yearRange: { start: number; end: number };
   books: Artifact[];
   papers: Artifact[];
   movies: Artifact[];
-  byDecade: DecadeArtifacts[];
 }
 
 export interface YearlyDataPoint {

@@ -47,6 +47,16 @@ export { Prisma }
  */
 export type User = Prisma.UserModel
 /**
+ * Model Search
+ * 
+ */
+export type Search = Prisma.SearchModel
+/**
+ * Model UserSearch
+ * 
+ */
+export type UserSearch = Prisma.UserSearchModel
+/**
  * Model Session
  * 
  */

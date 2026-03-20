@@ -1,6 +1,6 @@
-import { sanitizeYearRange, sleep } from "@/lib/apis/common";
+import { sleep } from "@/lib/apis/common";
 import { fetchOpenLibraryTopBooks } from "@/lib/apis/openlibrary";
-import type { Artifact, ArtifactsResponse, DecadeArtifacts } from "@/types/strata";
+import type { Artifact, ArtifactsResponse } from "@/types/strata";
 
 interface SSPaper {
   title?: string;
@@ -111,39 +111,13 @@ async function fetchMovies(query: string, yearStart: number, yearEnd: number): P
   }
 }
 
-function buildByDecade(
-  books: Artifact[],
-  papers: Artifact[],
-  movies: Artifact[],
-  yearStart: number,
-  yearEnd: number,
-): DecadeArtifacts[] {
-  const firstDecade = Math.ceil(yearStart / 10) * 10;
-  const lastDecade = Math.floor(yearEnd / 10) * 10;
-  const result: DecadeArtifacts[] = [];
-
-  for (let decade = firstDecade; decade <= lastDecade; decade += 10) {
-    const inDecade = (a: Artifact) => a.year >= decade && a.year <= decade + 9;
-    result.push({
-      decade,
-      book: books.find(inDecade),
-      paper: papers.find(inDecade),
-      movie: movies.find(inDecade),
-    });
-  }
-
-  return result;
-}
-
 export async function GET(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const query = (url.searchParams.get("q") ?? url.searchParams.get("query") ?? "").trim();
   if (!query) return Response.json({ error: "Missing query" }, { status: 400 });
 
-  const { start, end } = sanitizeYearRange(
-    url.searchParams.get("yearStart") ? Number(url.searchParams.get("yearStart")) : undefined,
-    url.searchParams.get("yearEnd") ? Number(url.searchParams.get("yearEnd")) : undefined,
-  );
+  const end = new Date().getFullYear();
+  const start = end - 10;
 
   const [books, papers, movies] = await Promise.all([
     fetchOpenLibraryTopBooks(query, start, end),
@@ -151,15 +125,11 @@ export async function GET(request: Request): Promise<Response> {
     fetchMovies(query, start, end),
   ]);
 
-  const byDecade = buildByDecade(books, papers, movies, start, end);
-
   const response: ArtifactsResponse = {
     query,
-    yearRange: { start, end },
     books: books.slice(0, 3),
     papers: papers.slice(0, 3),
     movies: movies.slice(0, 3),
-    byDecade,
   };
 
   return Response.json(response);

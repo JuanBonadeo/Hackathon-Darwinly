@@ -8,17 +8,44 @@ datasource db {
 }
 
 model User {
-  id            String    @id
+  id            String       @id
   name          String
-  email         String    @unique
+  email         String       @unique
   emailVerified Boolean
   image         String?
   createdAt     DateTime
   updatedAt     DateTime
   sessions      Session[]
   accounts      Account[]
+  userSearches  UserSearch[]
 
   @@map("user")
+}
+
+model Search {
+  id           String       @id @default(uuid())
+  query        String
+  endpoint     String
+  response     Json
+  durationMs   Int
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  userSearches UserSearch[]
+
+  @@unique([query, endpoint])
+  @@map("search")
+}
+
+model UserSearch {
+  id         String   @id @default(uuid())
+  userId     String
+  searchId   String
+  searchedAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  search     Search   @relation(fields: [searchId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, searchId])
+  @@map("user_search")
 }
 
 model Session {

@@ -3,7 +3,8 @@ import { fetchNytYearly } from "@/lib/apis/nyt";
 import { fetchOpenLibraryYearly } from "@/lib/apis/openlibrary";
 import { fetchTmdbYearly } from "@/lib/apis/tmdb";
 import { fetchWikipediaYearly } from "@/lib/apis/wikipedia";
-import { getCached, setCache } from "@/lib/cache";
+import { auth } from "@/lib/auth";
+import prisma from "@/lib/prisma";
 import type { Explore3DResponse, YearlyDataPoint, YearlySeries } from "@/types/strata";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -21,28 +22,48 @@ function currentEndDate(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
+async function linkUserSearch(userId: string, searchId: string): Promise<void> {
+  await prisma.userSearch.upsert({
+    where: { userId_searchId: { userId, searchId } },
+    create: { userId, searchId },
+    update: { searchedAt: new Date() },
+  });
+}
+
 // ─── Route Handler ────────────────────────────────────────────────────────────
 
 export async function GET(request: Request): Promise<Response> {
   const url = new URL(request.url);
-  const query = url.searchParams.get("q")?.trim();
+  const raw = url.searchParams.get("q")?.trim();
 
-  if (!query) {
+  if (!raw) {
     return Response.json({ error: "Missing q parameter" }, { status: 400 });
   }
 
-  const cacheKey = query.toLowerCase().trim();
-  const cached = getCached<Explore3DResponse>(cacheKey);
-  if (cached) {
-    console.log("[Explore3D] Cache hit", { query });
-    return Response.json(cached);
+  const query = raw.toLowerCase().trim();
+  const ENDPOINT = "explore3d";
+
+  const session = await auth.api.getSession({ headers: request.headers });
+  const userId = session?.user?.id ?? null;
+
+  // ─── DB cache hit ─────────────────────────────────────────────────────────
+  const existing = await prisma.search.findUnique({
+    where: { query_endpoint: { query, endpoint: ENDPOINT } },
+  });
+
+  if (existing) {
+    console.log("[Explore3D] DB cache hit", { query });
+    if (userId) await linkUserSearch(userId, existing.id);
+    return Response.json(existing.response);
   }
 
+  // ─── Fetch ────────────────────────────────────────────────────────────────
   const endDate = currentEndDate();
   const coreKey = process.env.CORE_API_KEY;
   const nytKey = process.env.NYT_API_KEY;
 
   console.log("[Explore3D] Fetch start", { query, endDate });
+  const start = Date.now();
 
   const [wikipedia, books, papers, movies, news] = await Promise.all([
     withTimeout(
@@ -87,10 +108,17 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const response: Explore3DResponse = { query, sources };
+  const durationMs = Date.now() - start;
 
   const available = allSeries.filter((s) => s.available).length;
-  console.log("[Explore3D] Fetch complete", { available, total: 5 });
+  console.log("[Explore3D] Fetch complete", { available, total: 5, durationMs });
 
-  setCache(cacheKey, response);
+  // ─── Persist ──────────────────────────────────────────────────────────────
+  const saved = await prisma.search.create({
+    data: { query, endpoint: ENDPOINT, response: response as object, durationMs },
+  });
+
+  if (userId) await linkUserSearch(userId, saved.id);
+
   return Response.json(response);
 }
