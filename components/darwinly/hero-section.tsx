@@ -34,24 +34,22 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
 
       <div 
         className={cn(
-          "section-shell max-w-4xl mx-auto px-6 py-12 sm:px-10 sm:py-16 text-center transition-all duration-700 ease-out",
+          "max-w-3xl mx-auto text-center transition-all duration-700 ease-out",
           isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
         )}
       >
-        <span className="section-kicker">Idea archaeology</span>
-
         {/* Headline */}
-        <h1 className="mt-5 text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight text-balance max-w-[760px] mx-auto">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight text-balance max-w-[700px] mx-auto">
           See how any idea evolved across human knowledge.
         </h1>
 
         {/* Subheadline */}
-        <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-[640px] mx-auto text-balance">
+        <p className="mt-5 text-lg sm:text-xl text-muted-foreground max-w-[600px] mx-auto text-balance">
           Cross-reference books, science, news, movies, and public interest to reveal the full timeline of any concept — powered by AI.
         </p>
 
         {/* Search Bar */}
-        <form onSubmit={handleSubmit} className="mt-10 max-w-[590px] mx-auto">
+        <form onSubmit={handleSubmit} className="mt-8 max-w-[560px] mx-auto">
           <div className="relative">
             <input
               ref={inputRef}
@@ -59,7 +57,7 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
               placeholder={'Try "artificial intelligence" or "climate change"...'}
-              className="w-full h-14 pl-5 pr-14 rounded-full bg-background/85 border border-border text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-transparent transition-all text-base shadow-[0_10px_30px_-22px_rgba(0,0,0,0.55)]"
+              className="w-full h-14 pl-5 pr-14 rounded-full bg-card/40 border border-border/40 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-transparent transition-all text-base shadow-[0_20px_50px_-20px_rgba(0,0,0,0.3)]"
             />
             <button
               type="submit"
@@ -72,7 +70,7 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
         </form>
 
         {/* Free to use label */}
-        <p className="mt-5 text-sm text-muted-foreground/70 font-light tracking-wide">
+        <p className="mt-4 text-sm text-muted-foreground/60 font-light">
           Free to use · No sign-up required
         </p>
       </div>
