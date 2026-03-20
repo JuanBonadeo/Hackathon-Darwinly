@@ -72,7 +72,7 @@ export default function HomePage() {
       <div
         className={cn(
           "transition-[margin-left] duration-300",
-          "lg:ml-[72px]",
+          "lg:ml-[120px]",
           isDesktopSidebarExpanded && "lg:ml-[260px]"
         )}
       >

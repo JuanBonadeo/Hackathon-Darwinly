@@ -1,7 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
+import { useTheme } from "next-themes"
 import { 
   Clock, 
   LogIn, 
@@ -37,6 +39,34 @@ export function Sidebar({
   onDesktopExpandedChange,
 }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const collapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (collapseTimerRef.current) {
+        clearTimeout(collapseTimerRef.current)
+      }
+    }
+  }, [])
+
+  const clearCollapseTimer = () => {
+    if (collapseTimerRef.current) {
+      clearTimeout(collapseTimerRef.current)
+      collapseTimerRef.current = null
+    }
+  }
+
+  const handleDesktopEnter = () => {
+    clearCollapseTimer()
+    onDesktopExpandedChange(true)
+  }
+
+  const handleDesktopLeave = () => {
+    clearCollapseTimer()
+    collapseTimerRef.current = setTimeout(() => {
+      onDesktopExpandedChange(false)
+    }, 140)
+  }
 
   return (
     <>
@@ -66,14 +96,14 @@ export function Sidebar({
 
       {/* Desktop sidebar */}
       <aside
-        className="hidden lg:flex fixed left-0 top-0 h-screen flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-300"
-        style={{ width: isDesktopExpanded ? "260px" : "72px" }}
-        onMouseEnter={() => onDesktopExpandedChange(true)}
-        onMouseLeave={() => onDesktopExpandedChange(false)}
-        onFocusCapture={() => onDesktopExpandedChange(true)}
+        className="hidden lg:flex fixed left-0 top-0 h-screen flex-col border-r border-sidebar-border bg-sidebar will-change-[width] transition-[width] duration-500 ease-out"
+        style={{ width: isDesktopExpanded ? "260px" : "120px" }}
+        onMouseEnter={handleDesktopEnter}
+        onMouseLeave={handleDesktopLeave}
+        onFocusCapture={handleDesktopEnter}
         onBlurCapture={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-            onDesktopExpandedChange(false)
+            handleDesktopLeave()
           }
         }}
       >
@@ -96,21 +126,40 @@ function SidebarContent({
   onSearchHistoryClick: (term: string) => void 
   isCollapsed?: boolean
 }) {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme !== "light"
+
   return (
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className="p-4 pb-3">
         <Link href="/" className="flex items-center min-w-0">
-          {isCollapsed ? (
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sidebar-accent text-lg font-semibold text-foreground">
-              D
-            </span>
-          ) : (
-            <>
-            <span className="text-2xl font-semibold text-foreground">Darwin</span>
-            <span className="text-2xl font-semibold text-muted-foreground">ly</span>
-            </>
-          )}
+          <div className="relative h-24 w-full lg:h-28">
+            <div
+              className={`absolute inset-0 flex items-center transition-all duration-300 ease-out ${
+                isCollapsed ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-1"
+              }`}
+            >
+              <span className="flex h-24 w-24 items-center justify-center rounded-2xl bg-sidebar-accent p-2">
+                <Image src="/logo.svg" alt="Darwinly" width={88} height={88} className="h-[88px] w-[88px] object-contain" />
+              </span>
+            </div>
+
+            <div
+              className={`absolute inset-0 flex items-center transition-all duration-300 ease-out ${
+                isCollapsed ? "opacity-0 translate-x-1" : "opacity-100 translate-x-0"
+              }`}
+            >
+              <Image
+                src={isDark ? "/logoDarwin.svg" : "/logoDarwinClaro.svg"}
+                alt="Darwinly"
+                width={380}
+                height={92}
+                className="h-20 w-auto max-w-[220px] object-contain lg:h-24 lg:max-w-[228px]"
+                priority
+              />
+            </div>
+          </div>
         </Link>
       </div>
 
@@ -180,15 +229,15 @@ function SidebarContent({
           </div>
         </>
       ) : (
-        <div className="mt-auto px-3 pb-4">
+        <div className="mt-auto flex justify-center px-3 pb-4">
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
-            className="h-10 w-10"
-            title="Log in"
+            className="h-10 w-10 border-border bg-transparent hover:bg-sidebar-accent"
+            title="Sign in"
           >
             <LogIn className="h-4 w-4" />
-            <span className="sr-only">Log in</span>
+            <span className="sr-only">Sign in</span>
           </Button>
         </div>
       )}

@@ -23,7 +23,7 @@ export function Navbar({ isDesktopSidebarExpanded }: NavbarProps) {
   return (
     <header
       className={cn(
-        "fixed top-0 right-0 left-0 z-40 transition-all duration-300 lg:left-[72px]",
+        "fixed top-0 right-0 left-0 z-40 transition-all duration-300 lg:left-[120px]",
         isDesktopSidebarExpanded && "lg:left-[260px]",
         scrolled 
           ? "bg-background/80 backdrop-blur-md border-b border-border" 
