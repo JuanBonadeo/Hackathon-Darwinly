@@ -9,6 +9,7 @@ import { FeaturesSection } from "@/components/darwinly/features-section"
 import { UseCasesSection } from "@/components/darwinly/use-cases-section"
 import { PricingSection } from "@/components/darwinly/pricing-section"
 import { Footer } from "@/components/darwinly/footer"
+import { SearchResults } from "@/components/darwinly/search-results"
 import { cn } from "@/lib/utils"
 
 const SEARCH_HISTORY_KEY = "darwinly-search-history"
@@ -82,6 +83,7 @@ export default function HomePage() {
         {/* Main Content */}
         <main>
           <HeroSection onSearch={handleSearch} />
+          <SearchResults />
           <HowItWorksSection />
           <FeaturesSection />
           <UseCasesSection />
