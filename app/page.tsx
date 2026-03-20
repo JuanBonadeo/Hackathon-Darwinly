@@ -9,6 +9,7 @@ import { FeaturesSection } from "@/components/darwinly/features-section"
 import { UseCasesSection } from "@/components/darwinly/use-cases-section"
 import { PricingSection } from "@/components/darwinly/pricing-section"
 import { Footer } from "@/components/darwinly/footer"
+import { cn } from "@/lib/utils"
 
 const SEARCH_HISTORY_KEY = "darwinly-search-history"
 const MAX_HISTORY_ITEMS = 10
@@ -16,6 +17,7 @@ const MAX_HISTORY_ITEMS = 10
 export default function HomePage() {
   const [searchHistory, setSearchHistory] = useState<string[]>([])
   const [mounted, setMounted] = useState(false)
+  const [isDesktopSidebarExpanded, setIsDesktopSidebarExpanded] = useState(false)
 
   // Load search history from localStorage on mount
   useEffect(() => {
@@ -62,12 +64,20 @@ export default function HomePage() {
       <Sidebar 
         searchHistory={searchHistory} 
         onSearchHistoryClick={handleSearchHistoryClick}
+        isDesktopExpanded={isDesktopSidebarExpanded}
+        onDesktopExpandedChange={setIsDesktopSidebarExpanded}
       />
 
       {/* Main Content Area */}
-      <div className="lg:ml-[260px]">
+      <div
+        className={cn(
+          "transition-[margin-left] duration-300",
+          "lg:ml-[72px]",
+          isDesktopSidebarExpanded && "lg:ml-[260px]"
+        )}
+      >
         {/* Navbar */}
-        <Navbar />
+        <Navbar isDesktopSidebarExpanded={isDesktopSidebarExpanded} />
 
         {/* Main Content */}
         <main>
