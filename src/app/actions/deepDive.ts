@@ -12,6 +12,8 @@ import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { normalizeQuery, validateNormalizedQuery } from "@/actions/search";
 import { fetchWorldBankMacro, type WorldBankMacro } from "@/lib/apis/worldbank";
+import { fetchGitHubData, type GitHubData } from "@/lib/apis/github";
+import { detectGitHubRepo } from "./is-tech-query";
 import type { Artifact, YearlyDataPoint, YearlySeries } from "@/types/strata";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -34,6 +36,7 @@ export interface DeepDiveFullResponse {
   report: DeepDiveReport;
   sources: Record<string, YearlyDataPoint[]>;
   artifacts: Artifact[];
+  github?: GitHubData | null;
   fromCache?: boolean;
 }
 
@@ -221,6 +224,9 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
   const cacheQuery = normalizedQuery.toLowerCase();
   const ENDPOINT = "deep-dive-full";
 
+  const githubRepo = await detectGitHubRepo(cacheQuery);
+  console.log("[DeepDive] GitHub repo detection", { query: cacheQuery, githubRepo });
+
   let userId: string | null = null;
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -253,7 +259,7 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
   console.log("[DeepDive] Fetching sources", { query: cacheQuery });
   const start = Date.now();
 
-  const [wikipedia, books, papers, movies, news, macro, artifactBooks, artifactPapers, artifactMovies] =
+  const [wikipedia, books, papers, movies, news, macro, artifactBooks, artifactPapers, artifactMovies, github] =
     await Promise.all([
       withTimeout(
         fetchWikipediaYearly(cacheQuery, endDate),
@@ -300,6 +306,11 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
       withTimeout(fetchOpenLibraryTopBooks(cacheQuery, yearStart, yearEnd), 15_000, []),
       withTimeout(fetchArtifactPapers(cacheQuery, yearStart, yearEnd), 45_000, []),
       withTimeout(fetchArtifactMovies(cacheQuery, yearStart, yearEnd), 10_000, []),
+      withTimeout(
+        fetchGitHubData(cacheQuery, githubRepo),
+        15_000,
+        null,
+      ),
     ]);
 
   // ─── Build artifact candidate pool for Gemini ──────────────────────────────
@@ -413,6 +424,7 @@ If the query is a technology, focus on adoption narratives and hype cycles, not 
     report: report as DeepDiveReport,
     sources,
     artifacts,
+    github,
   };
 
   // ─── Persist ───────────────────────────────────────────────────────────────
