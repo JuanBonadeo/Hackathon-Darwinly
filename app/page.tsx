@@ -19,6 +19,7 @@ export default function HomePage() {
   const [searchHistory, setSearchHistory] = useState<string[]>([])
   const [mounted, setMounted] = useState(false)
   const [isDesktopSidebarExpanded, setIsDesktopSidebarExpanded] = useState(false)
+    const [activeQuery, setActiveQuery] = useState<string | null>(null)
 
   // Load search history from localStorage on mount
   useEffect(() => {
@@ -47,13 +48,17 @@ export default function HomePage() {
     )
     saveHistory(newHistory)
     
-    // In a real app, this would navigate to search results
-    console.log("[v0] Searching for:", term)
+      // Set active query to show results
+      setActiveQuery(term)
   }
 
   const handleSearchHistoryClick = (term: string) => {
     handleSearch(term)
   }
+
+    const handleBackToHome = () => {
+      setActiveQuery(null)
+    }
 
   if (!mounted) {
     return null
@@ -82,12 +87,17 @@ export default function HomePage() {
 
         {/* Main Content */}
         <main>
-          <HeroSection onSearch={handleSearch} />
-          <SearchResults />
-          <HowItWorksSection />
-          <FeaturesSection />
-          <UseCasesSection />
-          <PricingSection />
+            {!activeQuery ? (
+              <>
+                <HeroSection onSearch={handleSearch} />
+                <HowItWorksSection />
+                <FeaturesSection />
+                <UseCasesSection />
+                <PricingSection />
+              </>
+            ) : (
+              <SearchResults query={activeQuery} onBack={handleBackToHome} />
+            )}
         </main>
 
         {/* Footer */}

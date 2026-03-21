@@ -1,61 +1,66 @@
-'use client'
+﻿'use client'
 
-import { useState } from 'react'
+import { useEffect } from 'react'
 import { useSearchData } from '@/hooks/use-search-data'
-import { SearchCharts } from './search-charts'
 import { Darwinly3DChartWrapper } from './darwinly-3d-chart-wrapper'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertCircle, Loader2 } from 'lucide-react'
+import { AlertCircle, Loader2, ArrowLeft } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
-export function SearchResults() {
-  const [query, setQuery] = useState('')
-  const [searchQuery, setSearchQuery] = useState('')
+interface SearchResultsProps {
+  query: string
+  onBack: () => void
+}
+
+const SOURCE_BREAKDOWN_CONFIG = {
+  wikipedia: {
+    label: 'Wikipedia',
+    color: '#00A3FF',
+  },
+  books: {
+    label: 'Books',
+    color: '#00C46A',
+  },
+  papers: {
+    label: 'Papers',
+    color: '#7A42FF',
+  },
+  movies: {
+    label: 'Movies',
+    color: '#FFB300',
+  },
+  news: {
+    label: 'News',
+    color: '#FF3B30',
+  },
+}
+
+export function SearchResults({ query, onBack }: SearchResultsProps) {
   const { data, chartData, loading, error, fetchSearchData } = useSearchData()
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (query.trim()) {
-      setSearchQuery(query)
-      await fetchSearchData(query)
+  // Auto-fetch when query prop changes
+  useEffect(() => {
+    if (query) {
+      fetchSearchData(query)
     }
-  }
+  }, [query, fetchSearchData])
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8 space-y-6">
-      {/* Search Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Search Across Sources</CardTitle>
-          <CardDescription>
-            Enter a query to see data from Wikipedia, Books, Papers, Movies, and News
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSearch} className="flex gap-2">
-            <Input
-              type="text"
-              placeholder="Enter search query (e.g., 'artificial intelligence')"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              disabled={loading}
-              className="flex-1"
-            />
-            <Button type="submit" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Searching...
-                </>
-              ) : (
-                'Search'
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      {/* Back Button and Title */}
+      <div className="flex items-center gap-4 mb-8">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={onBack}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Home
+        </Button>
+        <h1 className="text-2xl sm:text-3xl font-bold">{query}</h1>
+      </div>
 
       {/* Error Alert */}
       {error && (
@@ -73,8 +78,46 @@ export function SearchResults() {
             barSize={8}
             autoRotate={true}
             rotateSpeed={4}
+            zScaleMode="source_relative"
           />
-          <SearchCharts data={chartData} query={searchQuery} />
+
+          <Card className="w-full">
+            <CardHeader>
+              <CardTitle>Source Breakdown</CardTitle>
+              <CardDescription>Totals by source</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {Object.entries(SOURCE_BREAKDOWN_CONFIG).map(([key, config]) => {
+                  const sourceData = chartData
+                    .filter((d) => d[key as keyof typeof d] !== undefined)
+                    .map((d) => d[key as keyof typeof d] as number)
+                  const total = sourceData.reduce((acc, val) => acc + val, 0)
+
+                  return (
+                    <div
+                      key={key}
+                      className="p-4 rounded-lg border"
+                      style={{
+                        borderColor: config.color,
+                        background: `${config.color}10`,
+                      }}
+                    >
+                      <div className="text-sm font-medium text-muted-foreground">
+                        {config.label}
+                      </div>
+                      <div className="text-2xl font-bold mt-2" style={{ color: config.color }}>
+                        {total.toLocaleString()}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {sourceData.length} years
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
         </>
       )}
 
@@ -84,18 +127,7 @@ export function SearchResults() {
           <CardContent className="flex justify-center items-center h-96">
             <div className="text-center space-y-4">
               <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-              <p className="text-muted-foreground">Fetching search data...</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Initial State */}
-      {!data && !loading && !error && (
-        <Card>
-          <CardContent className="flex justify-center items-center h-96">
-            <div className="text-center text-muted-foreground">
-              Enter a search query above to see the charts
+              <p className="text-muted-foreground">Searching for "{query}"...</p>
             </div>
           </CardContent>
         </Card>

@@ -10,26 +10,51 @@
  */
 
 const SOURCE_COLORS = {
-  wikipedia: '#38bdf8', // sky blue
-  books: '#6de3b0',     // mint green
-  papers: '#a78bfa',    // violet
-  movies: '#ffd166',    // yellow
-  news: '#ff6b6b',      // coral
+  wikipedia: '#00A3FF', // vivid blue
+  books: '#00C46A',     // vivid green
+  papers: '#7A42FF',    // vivid violet
+  movies: '#FFB300',    // vivid amber
+  news: '#FF3B30',      // vivid red
 }
 
 const SOURCE_NAMES = ['wikipedia', 'books', 'papers', 'movies', 'news']
+const Z_SCALE_MODES = {
+  YEAR_SHARE: 'year_share',
+  SOURCE_RELATIVE: 'source_relative',
+  LOG_GLOBAL: 'log_global',
+}
 
-/**
- * Formats large numbers for axis labels (1.2M, 500K, etc.)
- */
-function formatAxisValue(value) {
-  if (value >= 1000000) {
-    return (value / 1000000).toFixed(1) + 'M'
-  }
-  if (value >= 1000) {
-    return (value / 1000).toFixed(0) + 'K'
-  }
-  return value.toString()
+const Z_SCALE_META = {
+  [Z_SCALE_MODES.YEAR_SHARE]: {
+    axisName: 'Year Share % (Z)',
+    valueLabel: 'Year Share',
+    description: 'Percent of each year total',
+  },
+  [Z_SCALE_MODES.SOURCE_RELATIVE]: {
+    axisName: 'Source Relative % (Z)',
+    valueLabel: 'Source Relative',
+    description: 'Percent of source peak (all years)',
+  },
+  [Z_SCALE_MODES.LOG_GLOBAL]: {
+    axisName: 'Log Index % (Z)',
+    valueLabel: 'Log Index',
+    description: 'Log-scaled against global max',
+  },
+}
+const SOURCE_LABELS = {
+  wikipedia: 'Wikipedia',
+  books: 'Books',
+  papers: 'Papers',
+  movies: 'Movies',
+  news: 'News',
+}
+
+function getSourceLabel(sourceKey) {
+  return SOURCE_LABELS[sourceKey] || sourceKey
+}
+
+function getScaleMeta(scaleMode) {
+  return Z_SCALE_META[scaleMode] || Z_SCALE_META[Z_SCALE_MODES.SOURCE_RELATIVE]
 }
 
 /**
@@ -50,11 +75,30 @@ function getYearsRange(sources) {
 }
 
 /**
- * Builds dataset rows: [[year_string, source_name, count, source_index], ...]
+ * Builds dataset rows with configurable normalization:
+ * [[year, source, z_value, source_index, raw_count, year_total, source_max, year_share], ...]
  */
-function buildDataset(sources) {
+function buildDataset(sources, scaleMode) {
   const years = getYearsRange(sources)
   const rows = []
+  const yearTotals = new Map(years.map((year) => [year, 0]))
+  const sourceMaxMap = new Map(SOURCE_NAMES.map((source) => [source, 0]))
+
+  SOURCE_NAMES.forEach((sourceName) => {
+    const sourceData = sources[sourceName]
+    if (!Array.isArray(sourceData)) return
+
+    sourceData.forEach((item) => {
+      if (!yearTotals.has(item.year)) return
+      yearTotals.set(item.year, (yearTotals.get(item.year) || 0) + (item.count || 0))
+
+      const sourceMax = sourceMaxMap.get(sourceName) || 0
+      sourceMaxMap.set(sourceName, Math.max(sourceMax, item.count || 0))
+    })
+  })
+
+  const globalMax = Math.max(...Array.from(sourceMaxMap.values()), 1)
+  const globalLogMax = Math.log10(globalMax + 1)
   
   // For each source, iterate through all years
   SOURCE_NAMES.forEach((sourceName, sourceIndex) => {
@@ -68,11 +112,29 @@ function buildDataset(sources) {
     // For each year, add a row
     years.forEach((year) => {
       const count = yearMap.get(year) || 0
+      const yearTotal = yearTotals.get(year) || 0
+      const sourceMax = sourceMaxMap.get(sourceName) || 0
+      const yearShare = yearTotal > 0 ? (count / yearTotal) * 100 : 0
+      const sourceRelative = sourceMax > 0 ? (count / sourceMax) * 100 : 0
+      const logGlobal = globalLogMax > 0 ? (Math.log10(count + 1) / globalLogMax) * 100 : 0
+
+      let zValue = sourceRelative
+      if (scaleMode === Z_SCALE_MODES.YEAR_SHARE) {
+        zValue = yearShare
+      }
+      if (scaleMode === Z_SCALE_MODES.LOG_GLOBAL) {
+        zValue = logGlobal
+      }
+
       rows.push([
         year.toString(),
         sourceName,
-        count,
+        zValue,
         sourceIndex,
+        count,
+        yearTotal,
+        sourceMax,
+        yearShare,
       ])
     })
   })
@@ -96,6 +158,7 @@ export default class Darwinly3DChart {
       barSize: 8,
       autoRotate: true,
       rotateSpeed: 4,
+      zScaleMode: Z_SCALE_MODES.SOURCE_RELATIVE,
       ...options,
     }
     
@@ -167,19 +230,25 @@ export default class Darwinly3DChart {
    * Build complete chart options
    */
   _buildChartOptions() {
-    const { rows, years } = buildDataset(this.data.sources)
+    const { rows, years } = buildDataset(this.data.sources, this.options.zScaleMode)
+    const scaleMeta = getScaleMeta(this.options.zScaleMode)
     
     return {
       tooltip: {
         formatter: (params) => {
           if (params.componentSubType === 'bar3D') {
-            const [year, source, count] = params.value
+            const [year, source, zValue, , rawCount, yearTotal, sourceMax, yearShare] = params.value
             return `
               <div style="padding: 8px;">
                 <div><strong>${this.data.query}</strong></div>
-                <div>Year: ${year}</div>
-                <div>Source: <span style="color: ${SOURCE_COLORS[source]}">${source}</span></div>
-                <div>Count: <strong>${count.toLocaleString()}</strong></div>
+                <div>Year (X): ${year}</div>
+                <div>Source (Y): <span style="color: ${SOURCE_COLORS[source]}">${getSourceLabel(source)}</span></div>
+                <div>${scaleMeta.valueLabel} (Z): <strong>${zValue.toFixed(2)}%</strong></div>
+                <div>Year Share: <strong>${yearShare.toFixed(2)}%</strong></div>
+                <div>Count: <strong>${rawCount.toLocaleString()}</strong></div>
+                <div>Year Total: <strong>${yearTotal.toLocaleString()}</strong></div>
+                <div>Source Peak: <strong>${sourceMax.toLocaleString()}</strong></div>
+                <div style="margin-top:4px;color:#a6a6ba;font-size:11px;">Scale: ${scaleMeta.description}</div>
               </div>
             `.trim()
           }
@@ -204,7 +273,7 @@ export default class Darwinly3DChart {
           enable: true,
           bloom: {
             enable: true,
-            bloomIntensity: 0.1,
+            bloomIntensity: 0.03,
           },
         },
         
@@ -219,15 +288,19 @@ export default class Darwinly3DChart {
         },
         
         splitLine: {
-          lineStyle: {
-            color: '#2a2a44',
-          },
+          show: false,
         },
       },
       
       xAxis3D: {
         type: 'category',
         data: years,
+        name: 'Year (X)',
+        nameGap: 18,
+        nameTextStyle: {
+          color: '#a6a6ba',
+          fontSize: 11,
+        },
         axisLabel: {
           fontSize: 10,
           color: '#999',
@@ -236,34 +309,67 @@ export default class Darwinly3DChart {
           lineStyle: {
             color: '#2a2a44',
           },
+        },
+        splitLine: {
+          show: false,
+        },
+        splitArea: {
+          show: false,
         },
       },
       
       yAxis3D: {
         type: 'category',
         data: SOURCE_NAMES,
+        name: 'Source (Y)',
+        nameGap: 18,
+        nameTextStyle: {
+          color: '#a6a6ba',
+          fontSize: 11,
+        },
         axisLabel: {
           fontSize: 10,
           color: '#999',
+          formatter: (value) => getSourceLabel(value),
         },
         axisLine: {
           lineStyle: {
             color: '#2a2a44',
           },
+        },
+        splitLine: {
+          show: false,
+        },
+        splitArea: {
+          show: false,
         },
       },
       
       zAxis3D: {
         type: 'value',
+        name: scaleMeta.axisName,
+        nameGap: 20,
+        nameTextStyle: {
+          color: '#a6a6ba',
+          fontSize: 11,
+        },
         axisLabel: {
-          formatter: (value) => formatAxisValue(value),
+          formatter: (value) => `${value}%`,
           fontSize: 10,
           color: '#999',
         },
+        min: 0,
+        max: 100,
         axisLine: {
           lineStyle: {
             color: '#2a2a44',
           },
+        },
+        splitLine: {
+          show: false,
+        },
+        splitArea: {
+          show: false,
         },
       },
       
@@ -271,12 +377,14 @@ export default class Darwinly3DChart {
         {
           type: 'bar3D',
           data: rows,
-          shading: 'lambert',
+          shading: 'color',
           label: {
             show: false,
           },
           itemStyle: {
-            opacity: 0.85,
+            opacity: 1,
+            borderWidth: 1.5,
+            borderColor: 'rgba(255, 255, 255, 0.7)',
             color: (params) => {
               const sourceIndex = params.data[3]
               return getColorBySourceIndex(sourceIndex)
@@ -285,6 +393,8 @@ export default class Darwinly3DChart {
           emphasis: {
             itemStyle: {
               opacity: 1,
+              borderWidth: 2,
+              borderColor: 'rgba(255, 255, 255, 0.95)',
               color: (params) => {
                 const sourceIndex = params.data[3]
                 return getColorBySourceIndex(sourceIndex)
