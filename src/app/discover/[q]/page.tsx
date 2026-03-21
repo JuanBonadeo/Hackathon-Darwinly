@@ -1,22 +1,21 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { use, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/darwinly/sidebar"
 import { Navbar } from "@/components/darwinly/navbar"
-import { HeroSection } from "@/components/darwinly/hero-section"
-import { HowItWorksSection } from "@/components/darwinly/how-it-works-section"
-import { FeaturesSection } from "@/components/darwinly/features-section"
-import { UseCasesSection } from "@/components/darwinly/use-cases-section"
-import { PricingSection } from "@/components/darwinly/pricing-section"
+import { SearchResults } from "@/components/darwinly/search-results"
 import { Footer } from "@/components/darwinly/footer"
 import { cn } from "@/lib/utils"
 
 const SEARCH_HISTORY_KEY = "darwinly-search-history"
 const MAX_HISTORY_ITEMS = 10
 
-export default function HomePage() {
+export default function DiscoverPage({ params }: { params: Promise<{ q: string }> }) {
+  const { q } = use(params)
+  const query = decodeURIComponent(q)
   const router = useRouter()
+
   const [searchHistory, setSearchHistory] = useState<string[]>([])
   const [mounted, setMounted] = useState(false)
   const [isDesktopSidebarExpanded, setIsDesktopSidebarExpanded] = useState(false)
@@ -24,23 +23,26 @@ export default function HomePage() {
   useEffect(() => {
     setMounted(true)
     const stored = localStorage.getItem(SEARCH_HISTORY_KEY)
+    let history: string[] = []
     if (stored) {
       try {
-        setSearchHistory(JSON.parse(stored))
+        history = JSON.parse(stored)
       } catch {
-        setSearchHistory([])
+        history = []
       }
     }
-  }, [])
+    // Add current query to history if not already present
+    const newHistory = [query, ...history.filter((t) => t !== query)].slice(0, MAX_HISTORY_ITEMS)
+    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(newHistory))
+    setSearchHistory(newHistory)
+  }, [query])
 
   const saveHistory = (history: string[]) => {
     localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history))
     setSearchHistory(history)
   }
 
-  const handleSearch = (term: string) => {
-    const newHistory = [term, ...searchHistory.filter((t) => t !== term)].slice(0, MAX_HISTORY_ITEMS)
-    saveHistory(newHistory)
+  const handleSearchHistoryClick = (term: string) => {
     router.push(`/discover/${encodeURIComponent(term)}`)
   }
 
@@ -49,15 +51,13 @@ export default function HomePage() {
     saveHistory(newHistory)
   }
 
-  if (!mounted) {
-    return null
-  }
+  if (!mounted) return null
 
   return (
     <div className="min-h-screen bg-background">
       <Sidebar
         searchHistory={searchHistory}
-        onSearchHistoryClick={handleSearch}
+        onSearchHistoryClick={handleSearchHistoryClick}
         onDeleteSearchHistory={handleDeleteSearchHistory}
         onLogoClick={() => {}}
         isDesktopExpanded={isDesktopSidebarExpanded}
@@ -72,15 +72,9 @@ export default function HomePage() {
         )}
       >
         <Navbar isDesktopSidebarExpanded={isDesktopSidebarExpanded} />
-
         <main>
-          <HeroSection onSearch={handleSearch} />
-          <HowItWorksSection />
-          <FeaturesSection />
-          <UseCasesSection />
-          <PricingSection />
+          <SearchResults query={query} />
         </main>
-
         <Footer />
       </div>
     </div>
