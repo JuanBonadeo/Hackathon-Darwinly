@@ -243,6 +243,20 @@ html {
   }
 }
 
+@keyframes darwinlyLogoBreath {
+  0%,
+  100% {
+    transform: scale(0.9);
+    opacity: 0.9;
+    filter: drop-shadow(0 0 0 color-mix(in oklab, var(--foreground) 0%, transparent));
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+    filter: drop-shadow(0 0 14px color-mix(in oklab, var(--foreground) 24%, transparent));
+  }
+}
+
 .search-transition-overlay {
   position: fixed;
   inset: 0;
@@ -333,30 +347,60 @@ html {
   animation: darwinlyCorePulse 2s ease-in-out infinite;
 }
 
+.search-transition-logo {
+  animation: darwinlyLogoBreath 1.8s ease-in-out infinite;
+  transform-origin: center;
+}
+
 .search-transition-label {
-  border-radius: 999px;
+  border-radius: 20px;
   border: 1px solid color-mix(in oklab, var(--border) 74%, transparent);
   background: color-mix(in oklab, var(--card) 92%, transparent);
-  padding: 0.5rem 0.95rem;
+  padding: 0.85rem 1.3rem 0.95rem;
+  min-width: min(86vw, 350px);
   font-size: 0.84rem;
-  text-transform: uppercase;
-  font-weight: 600;
   line-height: 1.35;
-  letter-spacing: 0.09em;
   color: color-mix(in oklab, var(--foreground) 72%, transparent);
+  display: grid;
+  gap: 0.28rem;
+  text-align: center;
   box-shadow:
-    0 8px 18px color-mix(in oklab, var(--foreground) 7%, transparent),
+    0 10px 30px color-mix(in oklab, var(--foreground) 9%, transparent),
     inset 0 0 0 1px color-mix(in oklab, var(--foreground) 3%, transparent);
 }
 
-.search-transition-label strong {
+.search-transition-label-title {
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.86rem;
   color: color-mix(in oklab, var(--foreground) 92%, transparent);
   font-weight: 700;
 }
 
+.search-transition-label-subtitle {
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: color-mix(in oklab, var(--foreground) 64%, transparent);
+}
+
+.search-transition-label-meta {
+  margin-top: 0.18rem;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--border) 68%, transparent);
+  background: color-mix(in oklab, var(--background) 70%, transparent);
+  justify-self: center;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--foreground) 62%, transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .search-transition-overlay,
-  .search-transition-ring {
+  .search-transition-ring,
+  .search-transition-logo {
     animation: none;
   }
 }

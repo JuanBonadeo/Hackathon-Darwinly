@@ -103,7 +103,7 @@ export function LoadingTransition({ state, isVisible, onHidden }: LoadingTransit
               <img
                 src="/logo.svg"
                 alt="Darwinly logo"
-                className="h-11 w-11 animate-spin"
+                className="search-transition-logo h-11 w-11"
               />
             </div>
           </div>
@@ -111,10 +111,10 @@ export function LoadingTransition({ state, isVisible, onHidden }: LoadingTransit
 
         {/* Loading Label */}
         <div className="search-transition-label">
-          <strong>{config.label}</strong>
-          <div className="text-xs opacity-75 mt-0.5">{config.description}</div>
+          <strong className="search-transition-label-title">{config.label}</strong>
+          <div className="search-transition-label-subtitle">{config.description}</div>
           {state !== 'cached-for-user' && (
-            <div className="text-[11px] opacity-70 mt-1">Asking Charles Darwin...</div>
+            <div className="search-transition-label-meta">Asking Charles Darwin...</div>
           )}
         </div>
       </div>
