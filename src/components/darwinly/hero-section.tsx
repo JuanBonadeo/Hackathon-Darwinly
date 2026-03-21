@@ -4,6 +4,16 @@ import { useState, useEffect, useRef } from "react"
 import { Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+const TRENDING_CONCEPTS = [
+  "Artificial Intelligence",
+  "Bitcoin",
+  "Blockchain",
+  "Avalanche Crypto",
+  "Climate Change",
+  "Racism",
+  "World War III",
+]
+
 interface HeroSectionProps {
   onSearch: (term: string) => void
 }
@@ -14,16 +24,30 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    setIsVisible(true)
+    const frame = window.requestAnimationFrame(() => {
+      setIsVisible(true)
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+    }
   }, [])
+
+  const submitSearch = (rawTerm: string) => {
+    const term = rawTerm.trim()
+    if (!term) return
+    onSearch(term)
+    setSearchValue("")
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (searchValue.trim()) {
-      onSearch(searchValue.trim())
-      setSearchValue("")
-    }
+    submitSearch(searchValue)
   }
+
+  const activeConcept = TRENDING_CONCEPTS.find(
+    (concept) => concept.toLowerCase() === searchValue.trim().toLowerCase()
+  )
 
   return (
     <section className="relative min-h-screen flex items-center justify-center px-6 py-16">
@@ -66,6 +90,37 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
             >
               <Search className="h-4 w-4" />
             </button>
+          </div>
+
+          <div className="mt-4">
+            <div className="flex flex-wrap gap-2 sm:gap-2.5">
+              {TRENDING_CONCEPTS.map((concept) => {
+                const isActive = activeConcept === concept
+
+                return (
+                  <button
+                    key={concept}
+                    type="button"
+                    onClick={() => {
+                      setSearchValue(concept)
+                      submitSearch(concept)
+                    }}
+                    className={cn(
+                      "inline-flex items-center rounded-full border px-3 py-1.5 text-xs sm:text-sm whitespace-nowrap",
+                      "transition-[transform,box-shadow,border-color,background-color,color] duration-200 ease-out",
+                      "bg-muted/35 text-muted-foreground border-border/50",
+                      "hover:-translate-y-0.5 hover:bg-card hover:text-foreground hover:border-foreground/30",
+                      "hover:shadow-[0_10px_25px_-14px_rgba(56,189,248,0.65)]",
+                      "active:translate-y-0 active:shadow-none",
+                      isActive && "border-foreground/50 bg-foreground/12 text-foreground shadow-[0_8px_22px_-14px_rgba(56,189,248,0.7)]"
+                    )}
+                    aria-label={`Search ${concept}`}
+                  >
+                    {concept}
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </form>
 
