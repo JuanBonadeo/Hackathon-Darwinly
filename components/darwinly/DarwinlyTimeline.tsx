@@ -126,11 +126,11 @@ export function DarwinlyTimeline({ data }: DarwinlyTimelineProps) {
     <Card>
       <CardHeader>
         <CardTitle className="text-2xl sm:text-3xl">
-          Wikipedia Activity Timeline for "{data.query}"
+          Timeline Signals for "{data.query}"
         </CardTitle>
-        <CardDescription>
-          Key moments in the concept&apos;s evolution, with peaks detected using only
-          Wikipedia activity data.
+        <CardDescription className="text-base sm:text-lg leading-relaxed">
+          Blue line: yearly activity. Yellow points: key peak years. Click a point
+          or a year badge to see a short explanation.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -206,26 +206,33 @@ export function DarwinlyTimeline({ data }: DarwinlyTimelineProps) {
           </LineChart>
         </ChartContainer>
 
-        {selected !== null && (
-          <div className="rounded-md border p-4 space-y-3">
-            <div className="font-medium">Year {selected}</div>
-            <p className="text-xs text-muted-foreground">
-              Explanation based on a peak detected in the Wikipedia time series.
-            </p>
+        <div className="rounded-md border p-4 space-y-3">
+          <div className="font-medium">Year details</div>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            The dashed line marks the selected year. We then generate a brief
+            explanation based on that year&apos;s source activity.
+          </p>
 
-            {loading[selected] ? (
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-11/12" />
-                <Skeleton className="h-4 w-10/12" />
-              </div>
-            ) : (
-              <p className="text-sm text-(--color-text-secondary)">
-                {explanations[selected] || 'Click a highlighted year above ↑'}
+          {selected === null ? (
+            <p className="text-base text-(--color-text-secondary)">
+              Select a highlighted year to view the explanation.
+            </p>
+          ) : loading[selected] ? (
+            <div className="space-y-2">
+              <div className="font-medium text-base">Selected year: {selected}</div>
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-11/12" />
+              <Skeleton className="h-4 w-10/12" />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="font-medium text-base">Selected year: {selected}</div>
+              <p className="text-base text-(--color-text-secondary) leading-relaxed">
+                {explanations[selected] || 'Explanation not available for this year yet.'}
               </p>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
 
         <div className="text-xs text-muted-foreground">
           Highlighted years (computed using only Wikipedia):

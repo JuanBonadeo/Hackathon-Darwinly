@@ -84,8 +84,10 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
 
           <Card className="w-full">
             <CardHeader>
-              <CardTitle>Source Breakdown</CardTitle>
-              <CardDescription>Totals by source</CardDescription>
+              <CardTitle className="text-2xl sm:text-3xl">Source Breakdown</CardTitle>
+              <CardDescription className="text-base sm:text-lg leading-relaxed">
+                Totals by source
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">

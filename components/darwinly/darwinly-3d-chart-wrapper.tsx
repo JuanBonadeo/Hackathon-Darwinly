@@ -91,8 +91,11 @@ export function Darwinly3DChartWrapper({
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>3D Visualization</CardTitle>
-        <CardDescription>Sources over time (interactive 3D chart)</CardDescription>
+        <CardTitle className="text-2xl sm:text-3xl">3D Evolution Map</CardTitle>
+        <CardDescription className="text-base sm:text-lg leading-relaxed">
+          X = year, Y = source, and bar height = activity level. Drag to rotate and
+          zoom for a clearer view of each peak.
+        </CardDescription>
       </CardHeader>
       <CardContent className="p-0">
         {!echartsGlLoaded && (

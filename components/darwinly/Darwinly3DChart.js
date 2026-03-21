@@ -265,7 +265,7 @@ export default class Darwinly3DChart {
           if (params.componentSubType === 'bar3D') {
             const [year, source, zValue, , rawCount, yearTotal, sourceMax, yearShare] = params.value
             return `
-              <div style="padding: 8px;">
+              <div style="padding: 10px; font-size: 13px; line-height: 1.45;">
                 <div><strong>${this.data.query}</strong></div>
                 <div>Year (X): ${year}</div>
                 <div>Source (Y): <span style="color: ${SOURCE_COLORS[source]}">${getSourceLabel(source)}</span></div>
@@ -274,7 +274,7 @@ export default class Darwinly3DChart {
                 <div>Count: <strong>${rawCount.toLocaleString()}</strong></div>
                 <div>Year Total: <strong>${yearTotal.toLocaleString()}</strong></div>
                 <div>Source Peak: <strong>${sourceMax.toLocaleString()}</strong></div>
-                <div style="margin-top:4px;color:#a6a6ba;font-size:11px;">Scale: ${scaleMeta.description}</div>
+                <div style="margin-top:6px;color:#a6a6ba;font-size:12px;">Scale: ${scaleMeta.description}</div>
               </div>
             `.trim()
           }
@@ -325,10 +325,10 @@ export default class Darwinly3DChart {
         nameGap: 18,
         nameTextStyle: {
           color: '#a6a6ba',
-          fontSize: 11,
+          fontSize: 13,
         },
         axisLabel: {
-          fontSize: 10,
+          fontSize: 12,
           color: '#999',
         },
         axisLine: {
@@ -351,10 +351,10 @@ export default class Darwinly3DChart {
         nameGap: 18,
         nameTextStyle: {
           color: '#a6a6ba',
-          fontSize: 11,
+          fontSize: 13,
         },
         axisLabel: {
-          fontSize: 10,
+          fontSize: 12,
           color: '#999',
           formatter: (value) => getSourceLabel(value),
         },
@@ -377,11 +377,11 @@ export default class Darwinly3DChart {
         nameGap: 20,
         nameTextStyle: {
           color: '#a6a6ba',
-          fontSize: 11,
+          fontSize: 13,
         },
         axisLabel: {
           formatter: (value) => `${value}%`,
-          fontSize: 10,
+          fontSize: 12,
           color: '#999',
         },
         min: 0,
