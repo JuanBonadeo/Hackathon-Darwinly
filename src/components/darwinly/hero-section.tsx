@@ -6,12 +6,16 @@ import { cn } from "@/lib/utils"
 
 const TRENDING_CONCEPTS = [
   "Artificial Intelligence",
+  "Avalanche Crypto",
   "Bitcoin",
   "Blockchain",
-  "Avalanche Crypto",
   "Climate Change",
+  "COVID-19",
+  "Elon Musk",
+  "Quantum Computing",
   "Racism",
-  "World War III",
+  "Ukraine War",
+  "World War III"
 ]
 
 interface HeroSectionProps {
@@ -92,7 +96,10 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
             </button>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-8">
+            <p className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-3">
+              Trending Concepts
+            </p>
             <div className="flex flex-wrap gap-2 sm:gap-2.5">
               {TRENDING_CONCEPTS.map((concept) => {
                 const isActive = activeConcept === concept
