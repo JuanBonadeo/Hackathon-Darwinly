@@ -199,6 +199,7 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 my-8" style={d(4)}>
                 <DarwinlyTimeline
                   data={data}
+                  annotations={deepDive.report.annotations}
                 />
               </div>
             )}

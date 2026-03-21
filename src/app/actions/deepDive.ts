@@ -14,7 +14,7 @@ import { normalizeQuery, validateNormalizedQuery } from "@/app/actions/search";
 import { fetchWorldBankMacro, type WorldBankMacro } from "@/lib/apis/worldbank";
 import { fetchGitHubData, type GitHubData } from "@/lib/apis/github";
 import { detectGitHubRepo } from "./is-tech-query";
-import type { Artifact, YearlyDataPoint, YearlySeries } from "@/types/strata";
+import type { Artifact, TimelineAnnotation, YearlyDataPoint, YearlySeries } from "@/types/strata";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -30,6 +30,7 @@ export interface DeepDiveReport {
   currentState: string;
   didYouKnow: string;
   phase: "genesis" | "rise" | "peak" | "consolidation" | "decline";
+  annotations?: TimelineAnnotation[];
 }
 
 export interface DeepDiveFullResponse {
@@ -414,6 +415,13 @@ If the query is a technology, focus on adoption narratives and hype cycles, not 
   "didYouKnow": "One genuinely surprising, non-obvious insight (max 200 chars). NOT a restatement of the data — synthesize something unexpected that emerges from cross-referencing sources or historical context. Avoid trivia; aim for 'huh, I never thought about it that way' reactions.",
 
   "phase": "one of: genesis | rise | peak | consolidation | decline — based on most recent trend",
+
+  "annotations": [
+    // 1 to 3 notable moments clearly visible in the data. Each must be grounded in the signal data above.
+    // type: "inflection" (trend changed direction), "peak" (highest attention moment), "milestone" (key cultural event that shows in data)
+    // explanation: 1 sentence max 120 chars — name the specific real-world event or cause, not just "interest increased"
+    { "year": number, "type": "inflection" | "peak" | "milestone", "explanation": "..." }
+  ],
 
   "selectedArtifacts": [i, j, k]  // exactly 3 indices from the ARTIFACT CANDIDATES list. Pick the ones with the greatest cultural reach and relevance — not just the highest score. Prefer variety across categories (Book, Paper, Movie) when meaningful. If fewer than 3 candidates exist, return fewer.
 }`;

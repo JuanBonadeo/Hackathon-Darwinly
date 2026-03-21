@@ -99,18 +99,23 @@ async function fetchStarHistory(
     pages.map(async (page) => {
       const url = `https://api.github.com/repos/${fullName}/stargazers?per_page=${PER_PAGE}&page=${page}`;
       const res = await fetch(url, { headers: starHeaders, cache: "no-store" });
-      if (!res.ok) return null;
+      if (!res.ok) {
+        console.error(`[GitHub] Stargazers page ${page} failed: ${res.status} ${res.statusText}`);
+        return null;
+      }
 
       const data = (await res.json()) as { starred_at: string }[];
       if (!data.length) return null;
 
-      // Cumulative stars at the first item of this page
       const stars = (page - 1) * PER_PAGE + 1;
+      console.log(`[GitHub] Page ${page} → date=${data[0].starred_at.slice(0, 10)}, cumStars=${stars}`);
       return { date: data[0].starred_at.slice(0, 10), stars };
     }),
   );
 
   const filtered = points.filter((p): p is { date: string; stars: number } => p !== null);
+
+  console.log(`[GitHub] Star history: ${filtered.length}/${numSamples} pages succeeded`);
 
   // Always append the current total as the last data point
   filtered.push({ date: new Date().toISOString().slice(0, 10), stars: totalStars });
@@ -126,16 +131,17 @@ export async function fetchGitHubData(query: string, repoFullName?: string | nul
   if (repoFullName) {
     console.log(`[GitHub] Fetching repo directly: ${repoFullName}`);
     repo = await fetchRepoByName(repoFullName, token);
-  }
-
-  if (!repo) {
-    console.log(`[GitHub] Falling back to search for "${query}"`);
+    if (!repo) {
+      console.log(`[GitHub] Could not fetch ${repoFullName}, skipping`);
+      return null;
+    }
+  } else {
+    console.log(`[GitHub] No repo hint, searching for "${query}"`);
     repo = await searchTopRepo(query, token);
-  }
-
-  if (!repo) {
-    console.log(`[GitHub] No prominent repo found for "${query}"`);
-    return null;
+    if (!repo) {
+      console.log(`[GitHub] No prominent repo found for "${query}"`);
+      return null;
+    }
   }
 
   console.log(`[GitHub] Found ${repo.fullName} (${repo.stars} stars)`);
