@@ -10,7 +10,7 @@ import { fetchWikipediaYearly } from "@/lib/apis/wikipedia";
 import { sleep } from "@/lib/apis/common";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { normalizeQuery, validateNormalizedQuery } from "@/actions/search";
+import { normalizeQuery, validateNormalizedQuery } from "@/app/actions/search";
 import { fetchWorldBankMacro, type WorldBankMacro } from "@/lib/apis/worldbank";
 import { fetchGitHubData, type GitHubData } from "@/lib/apis/github";
 import { detectGitHubRepo } from "./is-tech-query";
@@ -442,11 +442,8 @@ If the query is a technology, focus on adoption narratives and hype cycles, not 
     report: report as DeepDiveReport,
     sources,
     artifacts,
-<<<<<<< HEAD
     github,
-=======
     userSearched: false, // New search, not from user's history
->>>>>>> 7dec70c82be2a65cabe0c261d61e79cd7a367e74
   };
 
   // ─── Persist ───────────────────────────────────────────────────────────────
