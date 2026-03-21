@@ -10,6 +10,7 @@ import { fetchWikipediaYearly } from "@/lib/apis/wikipedia";
 import { sleep } from "@/lib/apis/common";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { normalizeQuery, validateNormalizedQuery } from "@/actions/search";
 import { fetchWorldBankMacro, type WorldBankMacro } from "@/lib/apis/worldbank";
 import type { Artifact, YearlyDataPoint, YearlySeries } from "@/types/strata";
 
@@ -211,7 +212,13 @@ async function fetchArtifactMovies(
 export async function deepDiveAction(query: string): Promise<DeepDiveFullResponse> {
   if (!query?.trim()) throw new Error("Missing query");
 
-  const normalizedQuery = query.toLowerCase().trim();
+  const normalizedQuery = normalizeQuery(query);
+  const validation = validateNormalizedQuery(normalizedQuery);
+  if (validation && !validation.success) {
+    throw new Error(validation.message);
+  }
+
+  const cacheQuery = normalizedQuery.toLowerCase();
   const ENDPOINT = "deep-dive-full";
 
   let userId: string | null = null;
@@ -224,11 +231,11 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
 
   // ─── DB cache hit ───────────────────────────────────────────────────────────
   const existing = await prisma.search.findUnique({
-    where: { query_endpoint: { query: normalizedQuery, endpoint: ENDPOINT } },
+    where: { query_endpoint: { query: cacheQuery, endpoint: ENDPOINT } },
   });
 
   if (existing) {
-    console.log("[DeepDive] DB cache hit", { query: normalizedQuery });
+    console.log("[DeepDive] DB cache hit", { query: cacheQuery });
     if (userId) await linkUserSearch(userId, existing.id);
     return { ...(existing.response as unknown as DeepDiveFullResponse), fromCache: true };
   }
@@ -243,24 +250,24 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
   const yearEnd = new Date().getFullYear();
   const yearStart = yearEnd - 10;
 
-  console.log("[DeepDive] Fetching sources", { query: normalizedQuery });
+  console.log("[DeepDive] Fetching sources", { query: cacheQuery });
   const start = Date.now();
 
   const [wikipedia, books, papers, movies, news, macro, artifactBooks, artifactPapers, artifactMovies] =
     await Promise.all([
       withTimeout(
-        fetchWikipediaYearly(normalizedQuery, endDate),
+        fetchWikipediaYearly(cacheQuery, endDate),
         10_000,
         unavailable("wikipedia", "Timeout"),
       ),
       withTimeout(
-        fetchOpenLibraryYearly(normalizedQuery),
+        fetchOpenLibraryYearly(cacheQuery),
         15_000,
         unavailable("books", "Timeout"),
       ),
       withTimeout(
         coreKey
-          ? fetchCoreYearly(normalizedQuery, coreKey).then((data): YearlySeries => ({
+          ? fetchCoreYearly(cacheQuery, coreKey).then((data): YearlySeries => ({
               id: "papers",
               available: data.some((d) => d.count > 0),
               data,
@@ -270,13 +277,13 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
         unavailable("papers", "Timeout"),
       ),
       withTimeout(
-        fetchTmdbYearly(normalizedQuery),
+        fetchTmdbYearly(cacheQuery),
         8_000,
         unavailable("movies", "Timeout"),
       ),
       withTimeout(
         guardianKey
-          ? fetchGuardianYearly(normalizedQuery, guardianKey).then((data): YearlySeries => ({
+          ? fetchGuardianYearly(cacheQuery, guardianKey).then((data): YearlySeries => ({
               id: "news",
               available: data.some((d) => d.count > 0),
               data,
@@ -290,9 +297,9 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
         gdpGrowth:  { label: "GDP growth",       unit: "% annual",        data: [] },
         rdSpending: { label: "R&D expenditure",  unit: "% of GDP",        data: [] },
       }),
-      withTimeout(fetchOpenLibraryTopBooks(normalizedQuery, yearStart, yearEnd), 15_000, []),
-      withTimeout(fetchArtifactPapers(normalizedQuery, yearStart, yearEnd), 45_000, []),
-      withTimeout(fetchArtifactMovies(normalizedQuery, yearStart, yearEnd), 10_000, []),
+      withTimeout(fetchOpenLibraryTopBooks(cacheQuery, yearStart, yearEnd), 15_000, []),
+      withTimeout(fetchArtifactPapers(cacheQuery, yearStart, yearEnd), 45_000, []),
+      withTimeout(fetchArtifactMovies(cacheQuery, yearStart, yearEnd), 10_000, []),
     ]);
 
   // ─── Build artifact candidate pool for Gemini ──────────────────────────────
@@ -410,13 +417,13 @@ If the query is a technology, focus on adoption narratives and hype cycles, not 
 
   // ─── Persist ───────────────────────────────────────────────────────────────
   const saved = await prisma.search.upsert({
-    where: { query_endpoint: { query: normalizedQuery, endpoint: ENDPOINT } },
-    create: { query: normalizedQuery, endpoint: ENDPOINT, response: response as object, durationMs },
+    where: { query_endpoint: { query: cacheQuery, endpoint: ENDPOINT } },
+    create: { query: cacheQuery, endpoint: ENDPOINT, response: response as object, durationMs },
     update: { response: response as object, durationMs },
   });
 
   if (userId) await linkUserSearch(userId, saved.id);
 
-  console.log("[DeepDive] Done", { query: normalizedQuery, durationMs });
+  console.log("[DeepDive] Done", { query: cacheQuery, durationMs });
   return response;
 }
