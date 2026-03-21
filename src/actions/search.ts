@@ -1,5 +1,3 @@
-"use server";
-
 export type SearchActionError =
   | "EMPTY_QUERY"
   | "TOO_SHORT"
@@ -144,6 +142,8 @@ export function validateNormalizedQuery(normalizedQuery: string): SearchActionRe
 }
 
 export async function searchAction(query: string): Promise<SearchActionResult> {
+  "use server";
+
   const normalizedQuery = normalizeQuery(query);
   const validation = validateNormalizedQuery(normalizedQuery);
 
