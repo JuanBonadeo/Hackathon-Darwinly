@@ -5,6 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -41,6 +42,7 @@ model UserSearch {
   userId     String
   searchId   String
   searchedAt DateTime @default(now())
+  isFavourite Boolean @default(false)
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   search     Search   @relation(fields: [searchId], references: [id], onDelete: Cascade)
 
