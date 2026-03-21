@@ -1,6 +1,6 @@
 "use server";
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getOpenAI } from "@/lib/openai";
 import { headers } from "next/headers";
 import { fetchCoreYearly } from "@/lib/apis/core-papers";
 import { fetchGuardianYearly } from "@/lib/apis/guardian";
@@ -14,6 +14,8 @@ import { normalizeQuery, validateNormalizedQuery } from "@/app/actions/search";
 import { fetchWorldBankMacro, type WorldBankMacro } from "@/lib/apis/worldbank";
 import { fetchGitHubData, type GitHubData } from "@/lib/apis/github";
 import { detectGitHubRepo } from "./is-tech-query";
+import { isCryptoQuery } from "./is-crypto-query";
+import { fetchCryptoData, type CryptoData } from "@/lib/apis/coinmarketcap";
 import type { Artifact, TimelineAnnotation, YearlyDataPoint, YearlySeries } from "@/types/strata";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -38,6 +40,7 @@ export interface DeepDiveFullResponse {
   sources: Record<string, YearlyDataPoint[]>;
   artifacts: Artifact[];
   github?: GitHubData | null;
+  crypto?: CryptoData | null;
   fromCache?: boolean;
   userSearched?: boolean; // true if user has searched this before
 }
@@ -226,8 +229,11 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
   const cacheQuery = normalizedQuery.toLowerCase();
   const ENDPOINT = "deep-dive-full";
 
-  const githubRepo = await detectGitHubRepo(cacheQuery);
-  console.log("[DeepDive] GitHub repo detection", { query: cacheQuery, githubRepo });
+  const [githubRepo, isCrypto] = await Promise.all([
+    detectGitHubRepo(cacheQuery),
+    isCryptoQuery(cacheQuery),
+  ]);
+  console.log("[DeepDive] Detection", { query: cacheQuery, githubRepo, isCrypto });
 
   let userId: string | null = null;
   try {
@@ -266,12 +272,18 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
       github = await fetchGitHubData(cacheQuery, githubRepo);
     }
 
-    return { ...cached, github, fromCache: true, userSearched };
+    // Hydrate crypto data if missing from cache
+    let crypto = cached.crypto;
+    if (crypto === undefined && isCrypto) {
+      console.log("[DeepDive] Hydrating missing crypto data for cached response");
+      crypto = await fetchCryptoData(cacheQuery);
+    }
+
+    return { ...cached, github, crypto, fromCache: true, userSearched };
   }
 
   // ─── Fetch sources ─────────────────────────────────────────────────────────
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (!geminiKey) throw new Error("GEMINI_API_KEY not configured");
+  if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY not configured");
 
   const endDate = currentEndDate();
   const coreKey = process.env.CORE_API_KEY;
@@ -282,7 +294,7 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
   console.log("[DeepDive] Fetching sources", { query: cacheQuery });
   const start = Date.now();
 
-  const [wikipedia, books, papers, movies, news, macro, artifactBooks, artifactPapers, artifactMovies, github] =
+  const [wikipedia, books, papers, movies, news, macro, artifactBooks, artifactPapers, artifactMovies, github, crypto] =
     await Promise.all([
       withTimeout(
         fetchWikipediaYearly(cacheQuery, endDate),
@@ -332,6 +344,11 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
       withTimeout(
         fetchGitHubData(cacheQuery, githubRepo),
         15_000,
+        null,
+      ),
+      withTimeout(
+        isCrypto ? fetchCryptoData(cacheQuery) : Promise.resolve(null),
+        10_000,
         null,
       ),
     ]);
@@ -432,17 +449,19 @@ If the query is a technology, focus on adoption narratives and hype cycles, not 
   "selectedArtifacts": [i, j, k]  // exactly 3 indices from the ARTIFACT CANDIDATES list. Pick the ones with the greatest cultural reach and relevance — not just the highest score. Prefer variety across categories (Book, Paper, Movie) when meaningful. If fewer than 3 candidates exist, return fewer.
 }`;
 
-  const genAI = new GoogleGenerativeAI(geminiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-  const result = await model.generateContent(prompt);
-  const text = result.response.text().trim();
-
-  const jsonText = text.startsWith("```")
-    ? text.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim()
-    : text;
-
-  const parsed = JSON.parse(jsonText) as DeepDiveReport & { selectedArtifacts?: number[] }
+  const openai = getOpenAI();
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o",
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        content: "You are a cultural analyst and journalist. Always respond with valid JSON exactly matching the requested schema.",
+      },
+      { role: "user", content: prompt },
+    ],
+  });
+  const parsed = JSON.parse(completion.choices[0].message.content ?? "{}") as DeepDiveReport & { selectedArtifacts?: number[] }
   const { selectedArtifacts: selectedIndices = [], ...report } = parsed
   const durationMs = Date.now() - start;
 
@@ -457,6 +476,7 @@ If the query is a technology, focus on adoption narratives and hype cycles, not 
     sources,
     artifacts,
     github,
+    crypto,
     userSearched: false, // New search, not from user's history
   };
 

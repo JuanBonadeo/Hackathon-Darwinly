@@ -110,7 +110,7 @@ export function LoadingTransition({ state, isVisible, onHidden }: LoadingTransit
         </div>
 
         {/* Loading Label */}
-        <div className="search-transition-label">
+        <div className="search-transition-label p-3">
           <strong className="search-transition-label-title">{config.label}</strong>
           <div className="search-transition-label-subtitle">{config.description}</div>
           {state !== 'cached-for-user' && (

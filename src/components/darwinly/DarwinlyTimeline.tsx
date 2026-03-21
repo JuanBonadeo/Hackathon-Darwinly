@@ -81,10 +81,13 @@ export function DarwinlyTimeline({ data, annotations = [] }: DarwinlyTimelinePro
     [wikipediaSeries]
   )
 
-  const annotationMap = useMemo(
-    () => new Map(annotations.map((a) => [a.year, a])),
-    [annotations]
-  )
+  const annotationMap = useMemo(() => {
+    const map = new Map<number, TimelineAnnotation>()
+    for (const a of annotations) {
+      if (!map.has(a.year)) map.set(a.year, a)
+    }
+    return map
+  }, [annotations])
 
   const hasAnnotations = annotations.length > 0
 
@@ -148,9 +151,9 @@ export function DarwinlyTimeline({ data, annotations = [] }: DarwinlyTimelinePro
               }}
             />
 
-            {annotations.slice(0, 3).map((annotation) => (
+            {annotations.slice(0, 3).map((annotation, i) => (
               <ReferenceLine
-                key={annotation.year}
+                key={`${annotation.year}-${i}`}
                 x={annotation.year}
                 stroke={ANNOTATION_COLORS[annotation.type]}
                 strokeDasharray="5 3"

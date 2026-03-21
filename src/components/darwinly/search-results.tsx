@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { AlertCircle, ArrowLeft, ExternalLink } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { GitHubActivity } from './GitHubActivity'
+import { CryptoMetrics } from './CryptoMetrics'
 
 interface SearchResultsProps {
   query: string
@@ -232,7 +233,7 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
                 </p>
                 <div className="flex flex-wrap gap-x-5 gap-y-2">
                   {Object.entries(SOURCE_CONFIG).map(([key, cfg]) => (
-                    <span key={key} className="flex items-center gap-2">
+                    <span key={key} className="flex items-center gap-2 bg-accent/30 px-2 py-1 rounded-full">
                       <span className="w-2 h-2 rounded-full shrink-0" style={{ background: cfg.color }} />
                       <span className="text-xs text-muted-foreground">
                         <span className="font-semibold" style={{ color: cfg.color }}>
@@ -260,6 +261,13 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
             {showFooter && deepDive?.github && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-700" style={d(8)}>
                 <GitHubActivity data={deepDive.github} />
+              </div>
+            )}
+
+            {/* Crypto Metrics — only when crypto data is available */}
+            {showFooter && deepDive?.crypto && (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-700" style={d(9)}>
+                <CryptoMetrics data={deepDive.crypto} />
               </div>
             )}
 

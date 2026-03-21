@@ -29,7 +29,7 @@ export function GitHubActivity({ data }: GitHubActivityProps) {
   })
 
   return (
-    <Card className="border-purple-500/20 bg-purple-900/10">
+    <Card className="border">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Github className="h-5 w-5" />

@@ -1,11 +1,10 @@
 "use server";
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getOpenAI } from "@/lib/openai";
 
 // Returns the GitHub "owner/repo" if the query is a known tech project, null otherwise.
 export async function detectGitHubRepo(query: string): Promise<string | null> {
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (!geminiKey) return null;
+  if (!process.env.OPENAI_API_KEY) return null;
 
   const prompt = `Does "${query}" refer to a specific software project with a public GitHub repository?
 
@@ -41,10 +40,13 @@ Examples:
 Return ONLY the repository full name like owner/repo or the word false. No quotes, no explanation, nothing else.`;
 
   try {
-    const genAI = new GoogleGenerativeAI(geminiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().trim().toLowerCase().replace(/^"|"$/g, "");
+    const openai = getOpenAI();
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 50,
+    });
+    const text = (completion.choices[0].message.content ?? "").trim().toLowerCase().replace(/^"|"$/g, "");
     if (text === "false" || !text.includes("/")) return null;
     return text;
   } catch {
