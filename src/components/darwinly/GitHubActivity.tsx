@@ -17,6 +17,7 @@ function formatStars(n: number): string {
 
 export function GitHubActivity({ data }: GitHubActivityProps) {
   const { repo, starHistory } = data
+  const hasChart = starHistory.length >= 2
 
   // Use year as label — show only unique years to avoid clutter
   const seenYears = new Set<string>()
@@ -38,30 +39,36 @@ export function GitHubActivity({ data }: GitHubActivityProps) {
       </CardHeader>
       <CardContent className="space-y-4">
 
-        <ResponsiveContainer width="100%" height={200}>
-          <AreaChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis dataKey="label" stroke="#9CA3AF" tick={{ fontSize: 11 }} />
-            <YAxis
-              stroke="#9CA3AF"
-              tick={{ fontSize: 11 }}
-              tickFormatter={formatStars}
-            />
-            <Tooltip
-              contentStyle={{ backgroundColor: "#1F2937", border: "1px solid #374151" }}
-              labelStyle={{ color: "#F3F4F6" }}
-              formatter={(v: number) => [formatStars(v), "stars"]}
-              labelFormatter={(_, payload) => payload?.[0]?.payload?.date ?? ""}
-            />
-            <Area
-              type="monotone"
-              dataKey="stars"
-              stroke="#8B5CF6"
-              fill="#8B5CF6"
-              fillOpacity={0.3}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+        {hasChart ? (
+          <ResponsiveContainer width="100%" height={200}>
+            <AreaChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="label" stroke="#9CA3AF" tick={{ fontSize: 11 }} />
+              <YAxis
+                stroke="#9CA3AF"
+                tick={{ fontSize: 11 }}
+                tickFormatter={formatStars}
+              />
+              <Tooltip
+                contentStyle={{ backgroundColor: "#1F2937", border: "1px solid #374151" }}
+                labelStyle={{ color: "#F3F4F6" }}
+                formatter={(v: number) => [formatStars(v), "stars"]}
+                labelFormatter={(_, payload) => payload?.[0]?.payload?.date ?? ""}
+              />
+              <Area
+                type="monotone"
+                dataKey="stars"
+                stroke="#8B5CF6"
+                fill="#8B5CF6"
+                fillOpacity={0.3}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Star history unavailable — add a <code>GITHUB_TOKEN</code> to enable it.
+          </p>
+        )}
 
         <div className="flex gap-6 text-sm text-muted-foreground">
           <span>

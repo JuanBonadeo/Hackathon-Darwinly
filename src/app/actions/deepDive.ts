@@ -244,7 +244,7 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
 
   if (existing) {
     console.log("[DeepDive] DB cache hit", { query: cacheQuery });
-    
+
     // Check if this user has searched this before
     let userSearched = false;
     if (userId) {
@@ -253,16 +253,20 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
       });
       userSearched = !!userSearch;
       if (!userSearch) {
-        // First time for this user, link them
         await linkUserSearch(userId, existing.id);
       }
     }
-    
-    return { 
-      ...(existing.response as unknown as DeepDiveFullResponse), 
-      fromCache: true,
-      userSearched,
-    };
+
+    const cached = existing.response as unknown as DeepDiveFullResponse;
+
+    // Hydrate github data if missing from cache (added after the response was cached)
+    let github = cached.github;
+    if (github === undefined && githubRepo) {
+      console.log("[DeepDive] Hydrating missing github data for cached response");
+      github = await fetchGitHubData(cacheQuery, githubRepo);
+    }
+
+    return { ...cached, github, fromCache: true, userSearched };
   }
 
   // ─── Fetch sources ─────────────────────────────────────────────────────────
@@ -397,13 +401,13 @@ If the query is a technology, focus on adoption narratives and hype cycles, not 
 
 ━━━ OUTPUT — valid JSON only, no markdown ━━━
 {
-  "oneLiner": "Ultra-compressed summary (max 100 chars). Use concrete descriptors, not abstractions.",
+  "oneLiner": "Ultra-compressed summary (max 70 chars). Use concrete descriptors, not abstractions.",
 
   "hook": "1 punchy sentence (max 120 chars). A provocation or surprising fact — not a definition.",
 
-  "genesis": "1-2 sentences (max 280 chars). When/how '${normalizedQuery}' emerged as a recognizable concept. Name the originating figure, work, or event if known.",
+  "genesis": "1-2 sentences (max 200 chars). When/how '${normalizedQuery}' emerged as a recognizable concept. Name the originating figure, work, or event if known.",
 
-  "trajectory": "3-4 sentences (max 400 chars). Trace evolution citing at least 2 data trends. Explain causality: 'X happened because...' not 'X happened and then...'",
+  "trajectory": "3-4 sentences (max 300 chars). Trace evolution citing at least 2 data trends. Explain causality: 'X happened because...' not 'X happened and then...'",
 
   "inflectionPoint": {
     "year": number | null,  // null if no clear pivot
@@ -417,9 +421,11 @@ If the query is a technology, focus on adoption narratives and hype cycles, not 
   "phase": "one of: genesis | rise | peak | consolidation | decline — based on most recent trend",
 
   "annotations": [
-    // 1 to 3 notable moments clearly visible in the data. Each must be grounded in the signal data above.
-    // type: "inflection" (trend changed direction), "peak" (highest attention moment), "milestone" (key cultural event that shows in data)
-    // explanation: 1 sentence max 120 chars — name the specific real-world event or cause, not just "interest increased"
+    // 1 to 3 defining cultural moments that shaped "${normalizedQuery}" as a phenomenon — drawn from widely known events, NOT inferred from sparse data trends.
+    // These should be moments a TIME Magazine cover or Wikipedia intro would mention.
+    // Use your knowledge: conferences, viral moments, policy changes, bestsellers, documentary releases, Nobel prizes, celebrity endorsements, tech launches.
+    // type: "inflection" (discourse shifted), "peak" (maximum cultural attention), "milestone" (pivotal real-world event)
+    // explanation: 1 sentence max 120 chars — name the specific event clearly
     { "year": number, "type": "inflection" | "peak" | "milestone", "explanation": "..." }
   ],
 

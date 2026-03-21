@@ -16,7 +16,7 @@ export interface GitHubData {
 
 const MIN_STARS = 500;
 const PER_PAGE = 100;
-const NUM_SAMPLES = 15;
+const NUM_SAMPLES = 8;
 
 function makeHeaders(token?: string): HeadersInit {
   return {
@@ -132,21 +132,25 @@ export async function fetchGitHubData(query: string, repoFullName?: string | nul
     console.log(`[GitHub] Fetching repo directly: ${repoFullName}`);
     repo = await fetchRepoByName(repoFullName, token);
     if (!repo) {
-      console.log(`[GitHub] Could not fetch ${repoFullName}, skipping`);
-      return null;
-    }
-  } else {
-    console.log(`[GitHub] No repo hint, searching for "${query}"`);
-    repo = await searchTopRepo(query, token);
-    if (!repo) {
-      console.log(`[GitHub] No prominent repo found for "${query}"`);
-      return null;
+      console.log(`[GitHub] fetchRepoByName failed for ${repoFullName} (rate limit or not found)`);
     }
   }
 
-  console.log(`[GitHub] Found ${repo.fullName} (${repo.stars} stars)`);
+  if (!repo) {
+    console.log(`[GitHub] Falling back to search for "${query}"`);
+    repo = await searchTopRepo(query, token);
+  }
+
+  if (!repo) {
+    console.log(`[GitHub] No repo found for "${query}"`);
+    return null;
+  }
+
+  console.log(`[GitHub] Using repo: ${repo.fullName} (${repo.stars} stars)`);
 
   const starHistory = await fetchStarHistory(repo.fullName, repo.stars, token);
+  console.log(`[GitHub] Star history points: ${starHistory.length}`);
 
+  // Return even if star history is empty — component handles it gracefully
   return { repo, starHistory };
 }
