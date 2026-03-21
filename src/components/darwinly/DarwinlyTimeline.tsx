@@ -206,8 +206,8 @@ export function DarwinlyTimeline({ data }: DarwinlyTimelineProps) {
           </LineChart>
         </ChartContainer>
 
-        <div className="rounded-md border p-4 space-y-3">
-          <div className="font-medium">Year details</div>
+        <div className="border-t pt-4 space-y-3">
+          <div className="font-medium text-sm text-muted-foreground">Year details</div>
           <p className="text-sm text-muted-foreground leading-relaxed">
             The dashed line marks the selected year. We then generate a brief
             explanation based on that year&apos;s source activity.

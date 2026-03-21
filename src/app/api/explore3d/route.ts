@@ -34,17 +34,6 @@ async function linkUserSearch(userId: string, searchId: string): Promise<void> {
 // ─── Route Handler ────────────────────────────────────────────────────────────
 
 export async function GET(request: Request): Promise<Response> {
-  const ip = request.headers.get("x-forwarded-for") ?? "unknown";
-  const { allowed, remaining } = checkRateLimit(ip);
-  const rateLimitHeaders = { "X-RateLimit-Remaining": String(remaining) };
-
-  if (!allowed) {
-    return Response.json(
-      { error: "Rate limit exceeded", remaining: 0 },
-      { status: 429, headers: rateLimitHeaders },
-    );
-  }
-
   const url = new URL(request.url);
   const raw = (url.searchParams.get("q") ?? url.searchParams.get("query") ?? "").trim();
 
@@ -58,7 +47,7 @@ export async function GET(request: Request): Promise<Response> {
   const session = await auth.api.getSession({ headers: request.headers });
   const userId = session?.user?.id ?? null;
 
-  // ─── DB cache hit ─────────────────────────────────────────────────────────
+  // ─── DB cache hit (no rate limit for cached queries) ──────────────────────
   const existing = await prisma.search.findUnique({
     where: { query_endpoint: { query, endpoint: ENDPOINT } },
   });
@@ -66,7 +55,19 @@ export async function GET(request: Request): Promise<Response> {
   if (existing) {
     console.log("[Explore3D] DB cache hit", { query });
     if (userId) await linkUserSearch(userId, existing.id);
-    return Response.json(existing.response, { headers: rateLimitHeaders });
+    return Response.json(existing.response);
+  }
+
+  // ─── Rate limit only for new (uncached) queries ───────────────────────────
+  const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+  const { allowed, remaining } = checkRateLimit(ip);
+  const rateLimitHeaders = { "X-RateLimit-Remaining": String(remaining) };
+
+  if (!allowed) {
+    return Response.json(
+      { error: "Rate limit exceeded", remaining: 0 },
+      { status: 429, headers: rateLimitHeaders },
+    );
   }
 
   // ─── Fetch ────────────────────────────────────────────────────────────────

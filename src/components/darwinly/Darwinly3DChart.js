@@ -10,11 +10,11 @@
  */
 
 const SOURCE_COLORS = {
-  wikipedia: '#00A3FF', // vivid blue
-  books: '#00C46A',     // vivid green
-  papers: '#7A42FF',    // vivid violet
-  movies: '#FFB300',    // vivid amber
-  news: '#FF3B30',      // vivid red
+  wikipedia: '#38BDF8', // sky blue
+  books: '#60A5FA',     // blue-400
+  papers: '#3B82F6',    // blue-500
+  movies: '#6366F1',    // indigo-500
+  news: '#1D4ED8',      // blue-700
 }
 
 const SOURCE_NAMES = ['wikipedia', 'books', 'papers', 'movies', 'news']

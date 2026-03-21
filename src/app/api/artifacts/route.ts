@@ -1,5 +1,6 @@
 import { sleep } from "@/lib/apis/common";
 import { fetchOpenLibraryTopBooks } from "@/lib/apis/openlibrary";
+import prisma from "@/lib/prisma";
 import type { Artifact, ArtifactsResponse } from "@/types/strata";
 
 interface SSPaper {
@@ -111,11 +112,24 @@ async function fetchMovies(query: string, yearStart: number, yearEnd: number): P
   }
 }
 
+const ENDPOINT = "artifacts";
+
 export async function GET(request: Request): Promise<Response> {
   const url = new URL(request.url);
-  const query = (url.searchParams.get("q") ?? url.searchParams.get("query") ?? "").trim();
+  const query = (url.searchParams.get("q") ?? url.searchParams.get("query") ?? "").trim().toLowerCase();
   if (!query) return Response.json({ error: "Missing query" }, { status: 400 });
 
+  // ─── DB cache hit ──────────────────────────────────────────────────────────
+  const existing = await prisma.search.findUnique({
+    where: { query_endpoint: { query, endpoint: ENDPOINT } },
+  });
+
+  if (existing) {
+    console.log("[Artifacts] DB cache hit", { query });
+    return Response.json(existing.response);
+  }
+
+  // ─── Fetch from external APIs ──────────────────────────────────────────────
   const end = new Date().getFullYear();
   const start = end - 10;
 
@@ -131,6 +145,14 @@ export async function GET(request: Request): Promise<Response> {
     papers: papers.slice(0, 3),
     movies: movies.slice(0, 3),
   };
+
+  // ─── Persist ───────────────────────────────────────────────────────────────
+  const durationMs = 0;
+  await prisma.search.upsert({
+    where: { query_endpoint: { query, endpoint: ENDPOINT } },
+    create: { query, endpoint: ENDPOINT, response: response as object, durationMs },
+    update: { response: response as object, durationMs },
+  });
 
   return Response.json(response);
 }
