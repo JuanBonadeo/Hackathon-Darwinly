@@ -46,7 +46,7 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const url = new URL(request.url);
-  const raw = url.searchParams.get("q")?.trim();
+  const raw = (url.searchParams.get("q") ?? url.searchParams.get("query") ?? "").trim();
 
   if (!raw) {
     return Response.json({ error: "Missing q parameter" }, { status: 400 });
