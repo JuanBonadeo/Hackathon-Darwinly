@@ -19,7 +19,6 @@ import {
 import {
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart'
 
@@ -105,28 +104,45 @@ export function DarwinlyTimeline({ data, inflectionYear = null, inflectionExplan
               width={56}
             />
             <ChartTooltip
-              content={
-                <ChartTooltipContent
-                  labelFormatter={(label) => `Year ${label}`}
-                  formatter={(value) => formatAxisValue(Number(value))}
-                />
-              }
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null
+                const isInflection = Number(label) === inflectionYear
+
+                return (
+                  <div className="bg-popover border rounded-lg shadow-lg p-3 max-w-xs">
+                    <p className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      {isInflection && <span>📍</span>}
+                      Year: {label}
+                    </p>
+
+                    {payload.map((entry) => (
+                      <div key={entry.dataKey as string} className="text-xs flex justify-between gap-4 mb-1">
+                        <span style={{ color: entry.color as string }}>{entry.name}:</span>
+                        <span className="font-medium">{formatAxisValue(Number(entry.value))}</span>
+                      </div>
+                    ))}
+
+                    {isInflection && inflectionExplanation && (
+                      <div className="mt-3 pt-2 border-t">
+                        <p className="text-xs text-yellow-400 font-semibold mb-1">Inflection Point</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {inflectionExplanation}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )
+              }}
             />
 
             {inflectionYear !== null && (
               <ReferenceLine
                 x={inflectionYear}
                 stroke="#fbbf24"
-                strokeDasharray="3 3"
+                strokeDasharray="5 3"
+                strokeWidth={2}
                 ifOverflow="extendDomain"
-                label={{
-                  value: inflectionExplanation
-                    ? `Inflection: ${inflectionExplanation.slice(0, 47)}${inflectionExplanation.length > 47 ? '…' : ''}`
-                    : 'Inflection',
-                  position: 'top',
-                  fontSize: 10,
-                  fill: '#fbbf24',
-                }}
+                label={{ value: '📍', position: 'top', fontSize: 20, fill: '#fbbf24' }}
               />
             )}
 

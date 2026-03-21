@@ -6,7 +6,7 @@ import { useSimulatedStreaming } from '@/hooks/use-simulated-streaming'
 import { Darwinly3DChartWrapper } from './darwinly-3d-chart-wrapper'
 import { DarwinlyTimeline } from './DarwinlyTimeline'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AlertCircle, ArrowLeft, ExternalLink } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -16,7 +16,7 @@ interface SearchResultsProps {
   onBack: () => void
 }
 
-const SOURCE_BREAKDOWN_CONFIG = {
+const SOURCE_CONFIG = {
   wikipedia: { label: 'Wikipedia', color: '#0F172A' },
   books:     { label: 'Books',     color: '#1E3A8A' },
   papers:    { label: 'Papers',    color: '#1D4ED8' },
@@ -24,10 +24,10 @@ const SOURCE_BREAKDOWN_CONFIG = {
   news:      { label: 'News',      color: '#60A5FA' },
 }
 
-const ARTIFACT_BADGE: Record<string, string> = {
-  openlibrary:     '📚 Book',
-  semanticscholar: '📄 Paper',
-  tmdb:            '🎬 Movie',
+const ARTIFACT_CONFIG: Record<string, { label: string; accent: string; emoji: string }> = {
+  openlibrary:     { label: 'Book',  accent: '#1E3A8A', emoji: '📚' },
+  semanticscholar: { label: 'Paper', accent: '#1D4ED8', emoji: '📄' },
+  tmdb:            { label: 'Movie', accent: '#3B82F6', emoji: '🎬' },
 }
 
 function formatTotal(n: number): string {
@@ -47,27 +47,55 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
     fetchSearchData,
   } = useSearchData()
 
-  const report      = deepDive?.report
-  const enabled     = !!report
+  const report        = deepDive?.report
+  const shouldAnimate = !deepDive?.fromCache && !!report
 
-  const streamedHook                  = useSimulatedStreaming(report?.hook,                         enabled, 25).displayedText
-  const streamedOneLiner              = useSimulatedStreaming(report?.oneLiner,                     enabled, 20).displayedText
-  const streamedDidYouKnow            = useSimulatedStreaming(report?.didYouKnow,                   enabled, 15).displayedText
-  const streamedGenesis               = useSimulatedStreaming(report?.genesis,                      enabled, 18).displayedText
-  const streamedTrajectory            = useSimulatedStreaming(report?.trajectory,                   enabled, 18).displayedText
-  const streamedCurrentState          = useSimulatedStreaming(report?.currentState,                 enabled, 18).displayedText
-  const streamedInflectionExplanation = useSimulatedStreaming(report?.inflectionPoint.explanation,  enabled, 15).displayedText
+  // Streaming hooks — only active when shouldAnimate = true (fresh search)
+  const hookS       = useSimulatedStreaming(report?.hook,                        shouldAnimate,                       10, 130)
+  const oneLinerS   = useSimulatedStreaming(report?.oneLiner,                    shouldAnimate && hookS.isDone,       12, 115)
+  const dykS        = useSimulatedStreaming(report?.didYouKnow,                  shouldAnimate && oneLinerS.isDone,   11, 115)
+  const genesisS    = useSimulatedStreaming(report?.genesis,                     shouldAnimate && dykS.isDone,        12, 110)
+  const trajectoryS = useSimulatedStreaming(report?.trajectory,                  shouldAnimate && genesisS.isDone,    12, 110)
+  const currentS    = useSimulatedStreaming(report?.currentState,                shouldAnimate && trajectoryS.isDone, 12, 110)
 
-  const getSourceTotal = (key: string) => {
-    const values = chartData
+  const hasInflection = !!report && report.inflectionPoint.year !== null
+  const inflectionS   = useSimulatedStreaming(
+    report?.inflectionPoint.explanation,
+    shouldAnimate && currentS.isDone && hasInflection,
+    10, 115,
+  )
+
+  // Display text — streamed when animating, direct from report when cached
+  const hookText       = shouldAnimate ? hookS.displayedText       : (report?.hook ?? '')
+  const oneLinerText   = shouldAnimate ? oneLinerS.displayedText   : (report?.oneLiner ?? '')
+  const dykText        = shouldAnimate ? dykS.displayedText        : (report?.didYouKnow ?? '')
+  const genesisText    = shouldAnimate ? genesisS.displayedText    : (report?.genesis ?? '')
+  const trajectoryText = shouldAnimate ? trajectoryS.displayedText : (report?.trajectory ?? '')
+  const currentText    = shouldAnimate ? currentS.displayedText    : (report?.currentState ?? '')
+  const inflectionText = shouldAnimate ? inflectionS.displayedText : (report?.inflectionPoint.explanation ?? '')
+
+  // Visibility gates — sequential when animating, all true immediately when cached
+  const showOneLiner    = !shouldAnimate || hookS.isDone
+  const showDyk         = !shouldAnimate || oneLinerS.isDone
+  const showGenesis     = !shouldAnimate || dykS.isDone
+  const showTimeline    = !shouldAnimate || genesisS.isDone
+  const showTrajectory  = !shouldAnimate || showTimeline
+  const showEvolution   = !shouldAnimate || trajectoryS.isDone
+  const showCurrentState = !shouldAnimate || showEvolution
+  const showInflection  = !shouldAnimate || (hasInflection && currentS.isDone)
+  const showFooter      = !shouldAnimate || (hasInflection ? inflectionS.isDone : currentS.isDone)
+
+  // Staggered delay for cached results (elements mount simultaneously)
+  const d = (n: number) =>
+    shouldAnimate ? {} : { animationDelay: `${n * 80}ms` }
+
+  const getSourceTotal = (key: string) =>
+    chartData
       .filter((d) => d[key as keyof typeof d] !== undefined)
       .map((d) => d[key as keyof typeof d] as number)
-    return values.reduce((acc, v) => acc + v, 0)
-  }
+      .reduce((acc, v) => acc + v, 0)
 
-  const mixedArtifacts = artifacts
-    ? [...artifacts.books, ...artifacts.papers, ...artifacts.movies].slice(0, 3)
-    : []
+  const mixedArtifacts = artifacts ?? []
 
   useEffect(() => {
     if (query) fetchSearchData(query)
@@ -116,74 +144,108 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
         </Card>
       )}
 
-      {/* 2. Main article card */}
+      {/* Article card */}
       {deepDive && data && (
         <Card>
           <CardContent className="pt-6 pb-8 space-y-6">
 
-            {/* Hook — article title */}
-            <h2 className="text-3xl sm:text-4xl font-bold leading-tight">
-              {streamedHook}
+            {/* Hook — always visible first */}
+            <h2 className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-3xl sm:text-4xl font-bold leading-tight min-h-10">
+              {hookText}
             </h2>
 
-            {/* OneLiner — subtitle / standfirst */}
-            <p className="text-lg sm:text-xl text-muted-foreground italic leading-relaxed">
-              {streamedOneLiner}
-            </p>
-
-            {/* Did You Know — callout */}
-            <div className="border-l-4 border-yellow-400 bg-yellow-400/10 pl-4 py-3">
-              <p className="text-sm flex items-start gap-2">
-                <span className="text-base shrink-0">💡</span>
-                <span className="leading-relaxed">{streamedDidYouKnow}</span>
+            {/* OneLiner */}
+            {showOneLiner && (
+              <p className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-lg sm:text-xl text-muted-foreground italic leading-relaxed min-h-7" style={d(1)}>
+                {oneLinerText}
               </p>
-            </div>
+            )}
 
-            {/* Genesis — first body paragraph */}
-            <p className="text-base leading-relaxed">
-              {streamedGenesis}
-            </p>
+            {/* Did You Know callout */}
+            {showDyk && (
+              <div className="animate-in fade-in slide-in-from-bottom-3 duration-600 border-l-4 border-yellow-400 bg-yellow-400/10 pl-4 py-3" style={d(2)}>
+                <p className="text-sm flex items-start gap-2">
+                  <span className="text-base shrink-0">💡</span>
+                  <span className="leading-relaxed">{dykText}</span>
+                </p>
+              </div>
+            )}
 
-            {/* Timeline — embedded chart */}
-            <div className="my-8">
-              <h3 className="text-xl font-semibold mb-4">Timeline</h3>
-              <DarwinlyTimeline
-                data={data}
-                inflectionYear={deepDive.report.inflectionPoint.year}
-                inflectionExplanation={deepDive.report.inflectionPoint.explanation}
-              />
-            </div>
+            {/* Genesis */}
+            {showGenesis && (
+              <p className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-base leading-relaxed" style={d(3)}>
+                {genesisText}
+              </p>
+            )}
 
-            {/* Trajectory — continues the narrative */}
-            <p className="text-base leading-relaxed">
-              {streamedTrajectory}
-            </p>
+            {/* Timeline — appears after genesis finishes */}
+            {showTimeline && (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 my-8" style={d(4)}>
+                <DarwinlyTimeline
+                  data={data}
+                  inflectionYear={deepDive.report.inflectionPoint.year}
+                  inflectionExplanation={deepDive.report.inflectionPoint.explanation}
+                />
+              </div>
+            )}
 
-            {/* Evolution Map — embedded 3D chart */}
-            <div className="my-8">
-              <h3 className="text-xl font-semibold mb-4">Evolution Map</h3>
-              <Darwinly3DChartWrapper
-                data={data}
-                barSize={8}
-                autoRotate={true}
-                rotateSpeed={4}
-                zScaleMode="source_relative"
-              />
-            </div>
+            {/* Trajectory */}
+            {showTrajectory && (
+              <p className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-base leading-relaxed" style={d(5)}>
+                {trajectoryText}
+              </p>
+            )}
 
-            {/* Current State — article close */}
-            <p className="text-base leading-relaxed">
-              {streamedCurrentState}
-            </p>
+            {/* Evolution Map — appears after trajectory finishes */}
+            {showEvolution && (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 my-8" style={d(6)}>
+                <Darwinly3DChartWrapper
+                  data={data}
+                  barSize={8}
+                  autoRotate={true}
+                  rotateSpeed={4}
+                  zScaleMode="source_relative"
+                />
+              </div>
+            )}
 
-            {/* Inflection point — footnote */}
-            {deepDive.report.inflectionPoint.year !== null && (
-              <div className="border-t border-border pt-4 mt-6">
+            {/* Current State */}
+            {showCurrentState && (
+              <p className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-base leading-relaxed" style={d(7)}>
+                {currentText}
+              </p>
+            )}
+
+            {/* Inflection footnote */}
+            {showInflection && hasInflection && (
+              <div className="animate-in fade-in duration-500 border-t border-border pt-4 mt-6" style={d(8)}>
                 <p className="text-sm text-muted-foreground">
                   <span className="font-semibold">Inflection point:</span>{' '}
                   {deepDive.report.inflectionPoint.year} —{' '}
-                  {streamedInflectionExplanation}
+                  {inflectionText}
                 </p>
+              </div>
+            )}
+
+            {/* Data sources — appears after all text is done */}
+            {showFooter && (
+              <div className="animate-in fade-in duration-500 border-t border-border pt-5 mt-2" style={d(9)}>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+                  Data sources
+                </p>
+                <div className="flex flex-wrap gap-x-5 gap-y-2">
+                  {Object.entries(SOURCE_CONFIG).map(([key, cfg]) => (
+                    <span key={key} className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: cfg.color }} />
+                      <span className="text-xs text-muted-foreground">
+                        <span className="font-semibold" style={{ color: cfg.color }}>
+                          {formatTotal(getSourceTotal(key))}
+                        </span>
+                        {' '}{cfg.label}
+                      </span>
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -191,72 +253,68 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
         </Card>
       )}
 
-      {/* 3. Sources */}
-      {data && !loading && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl sm:text-3xl">Sources</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-x-6 gap-y-2 items-center">
-              {Object.entries(SOURCE_BREAKDOWN_CONFIG).map(([key, config], i, arr) => (
-                <span key={key} className="flex items-center gap-2">
-                  <span className="font-bold text-sm" style={{ color: config.color }}>
-                    {formatTotal(getSourceTotal(key))}
-                  </span>
-                  <span className="text-sm text-muted-foreground">{config.label}</span>
-                  {i < arr.length - 1 && (
-                    <span className="text-muted-foreground select-none">|</span>
-                  )}
-                </span>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* 4. Key Resources */}
-      {mixedArtifacts.length > 0 && !loading && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl sm:text-3xl">Key Resources</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {mixedArtifacts.map((item, i) => (
+      {/* Key Resources — appears after article is fully revealed */}
+      {mixedArtifacts.length > 0 && !loading && showFooter && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-4 px-1" style={d(10)}>
+          <h2 className="text-xl font-bold">Key Resources</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {mixedArtifacts.map((item, i) => {
+              const cfg = ARTIFACT_CONFIG[item.source]
+              return item.imageUrl ? (
                 <div
                   key={`${item.source}-${item.title}-${i}`}
-                  className="rounded-lg border overflow-hidden flex flex-col"
+                  className="group rounded-xl border overflow-hidden flex flex-col hover:shadow-lg transition-shadow"
                 >
-                  <div className="h-40 bg-muted flex items-center justify-center overflow-hidden relative">
-                    {item.imageUrl ? (
-                      <img
-                        src={item.imageUrl}
-                        alt={item.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-4xl">
-                        {ARTIFACT_BADGE[item.source]?.split(' ')[0]}
-                      </span>
-                    )}
-                    <span className="absolute top-2 right-2 text-xs bg-background/90 border rounded px-1.5 py-0.5">
-                      {ARTIFACT_BADGE[item.source] ?? item.source}
+                  <div className="relative h-52 overflow-hidden">
+                    <img
+                      src={item.imageUrl}
+                      alt={item.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-linear-to-t from-black/75 via-black/20 to-transparent" />
+                    <span className="absolute top-2 left-2 text-xs bg-black/60 text-white rounded-full px-2 py-0.5 font-medium">
+                      {cfg?.emoji} {cfg?.label}
                     </span>
+                    <div className="absolute bottom-3 left-3 right-3">
+                      <p className="text-white font-semibold text-sm leading-snug line-clamp-2">{item.title}</p>
+                      <p className="text-white/70 text-xs mt-0.5">{item.year}</p>
+                    </div>
                   </div>
-                  <div className="p-3 flex flex-col gap-1 flex-1">
-                    <p className="font-semibold text-sm leading-snug line-clamp-2">{item.title}</p>
+                  {item.url && (
+                    <div className="px-3 py-2.5 border-t">
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
+                      >
+                        View <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div
+                  key={`${item.source}-${item.title}-${i}`}
+                  className="group rounded-xl border overflow-hidden flex flex-col hover:shadow-lg transition-shadow"
+                >
+                  <div className="h-1" style={{ background: cfg?.accent ?? '#1D4ED8' }} />
+                  <div className="p-4 flex flex-col gap-2 flex-1">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {cfg?.emoji} {cfg?.label}
+                    </span>
+                    <p className="font-semibold text-sm leading-snug line-clamp-3">{item.title}</p>
                     {item.author && (
                       <p className="text-xs text-muted-foreground truncate">{item.author}</p>
                     )}
-                    <div className="flex items-center justify-between mt-auto pt-2">
+                    <div className="flex items-center justify-between mt-auto pt-3">
                       <span className="text-xs text-muted-foreground">{item.year}</span>
                       {item.url && (
                         <a
                           href={item.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                          className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
                         >
                           View <ExternalLink className="h-3 w-3" />
                         </a>
@@ -264,10 +322,10 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              )
+            })}
+          </div>
+        </div>
       )}
 
     </div>

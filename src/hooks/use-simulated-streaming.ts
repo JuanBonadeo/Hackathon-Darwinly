@@ -8,18 +8,21 @@ export function useSimulatedStreaming(
 ) {
   const [displayedText, setDisplayedText] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
+  const [isDone, setIsDone] = useState(false)
   const indexRef = useRef(0)
 
   useEffect(() => {
     if (!enabled || !text) {
       setDisplayedText(text ?? '')
       setIsStreaming(false)
+      setIsDone(false)
       return
     }
 
     indexRef.current = 0
     setDisplayedText('')
     setIsStreaming(true)
+    setIsDone(false)
 
     const interval = setInterval(() => {
       indexRef.current = Math.min(indexRef.current + charsPerTick, text.length)
@@ -28,11 +31,12 @@ export function useSimulatedStreaming(
       if (indexRef.current >= text.length) {
         clearInterval(interval)
         setIsStreaming(false)
+        setIsDone(true)
       }
     }, tickMs)
 
     return () => clearInterval(interval)
   }, [text, enabled, charsPerTick, tickMs])
 
-  return { displayedText, isStreaming }
+  return { displayedText, isStreaming, isDone }
 }
