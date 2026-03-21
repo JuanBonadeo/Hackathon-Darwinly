@@ -10,8 +10,7 @@ import { fetchWikipediaYearly } from "@/lib/apis/wikipedia";
 import { sleep } from "@/lib/apis/common";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { fetchWorldBankMacro } from "@/lib/apis/worldbank";
-import type { WorldBankMacro } from "@/lib/apis/worldbank";
+import { fetchWorldBankMacro, type WorldBankMacro } from "@/lib/apis/worldbank";
 import type { Artifact, YearlyDataPoint, YearlySeries } from "@/types/strata";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
