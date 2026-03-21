@@ -35,6 +35,7 @@ export interface DeepDiveFullResponse {
   sources: Record<string, YearlyDataPoint[]>;
   artifacts: Artifact[];
   fromCache?: boolean;
+  userSearched?: boolean; // true if user has searched this before
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -236,8 +237,25 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
 
   if (existing) {
     console.log("[DeepDive] DB cache hit", { query: cacheQuery });
-    if (userId) await linkUserSearch(userId, existing.id);
-    return { ...(existing.response as unknown as DeepDiveFullResponse), fromCache: true };
+    
+    // Check if this user has searched this before
+    let userSearched = false;
+    if (userId) {
+      const userSearch = await prisma.userSearch.findUnique({
+        where: { userId_searchId: { userId, searchId: existing.id } },
+      });
+      userSearched = !!userSearch;
+      if (!userSearch) {
+        // First time for this user, link them
+        await linkUserSearch(userId, existing.id);
+      }
+    }
+    
+    return { 
+      ...(existing.response as unknown as DeepDiveFullResponse), 
+      fromCache: true,
+      userSearched,
+    };
   }
 
   // ─── Fetch sources ─────────────────────────────────────────────────────────
@@ -413,6 +431,7 @@ If the query is a technology, focus on adoption narratives and hype cycles, not 
     report: report as DeepDiveReport,
     sources,
     artifacts,
+    userSearched: false, // New search, not from user's history
   };
 
   // ─── Persist ───────────────────────────────────────────────────────────────

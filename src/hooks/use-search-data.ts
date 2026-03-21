@@ -10,6 +10,8 @@ export const useSearchData = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [chartData, setChartData] = useState<ChartData[]>([])
+  const [fromCache, setFromCache] = useState(false)
+  const [userSearched, setUserSearched] = useState(false)
 
   const transformDataForChart = useCallback((sources: Record<string, { year: number; count: number }[]>) => {
     const yearsSet = new Set<number>()
@@ -40,6 +42,8 @@ export const useSearchData = () => {
       setError(null)
       setDeepDive(null)
       setArtifacts(null)
+      setFromCache(false)
+      setUserSearched(false)
 
       try {
         const result = await deepDiveAction(query)
@@ -48,6 +52,8 @@ export const useSearchData = () => {
         setData(searchData)
         setDeepDive(result)
         setArtifacts(result.artifacts)
+        setFromCache(result.fromCache ?? false)
+        setUserSearched(result.userSearched ?? false)
 
         const transformed = transformDataForChart(result.sources)
         setChartData(transformed)
@@ -71,6 +77,8 @@ export const useSearchData = () => {
     chartData,
     loading,
     error,
+    fromCache,
+    userSearched,
     fetchSearchData,
   }
 }

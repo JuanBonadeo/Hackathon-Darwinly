@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchData } from '@/hooks/use-search-data'
 import { useSimulatedStreaming } from '@/hooks/use-simulated-streaming'
+import { LoadingTransition } from './loading-transition'
 import { Darwinly3DChartWrapper } from './darwinly-3d-chart-wrapper'
 import { DarwinlyTimeline } from './DarwinlyTimeline'
 import { Button } from '@/components/ui/button'
@@ -37,6 +38,8 @@ function formatTotal(n: number): string {
 }
 
 export function SearchResults({ query, onBack }: SearchResultsProps) {
+  const [transitionDone, setTransitionDone] = useState(false)
+
   const {
     data,
     deepDive,
@@ -44,42 +47,55 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
     chartData,
     loading,
     error,
+    fromCache,
+    userSearched,
     fetchSearchData,
   } = useSearchData()
 
-  const report        = deepDive?.report
-  const shouldAnimate = !deepDive?.fromCache && !!report
+  const report = deepDive?.report
+  const shouldStream = transitionDone && !!report && !(fromCache && userSearched)
+  const showContent = transitionDone && !!deepDive && !!data
+  
+  // Determine loading state for transition animation
+  let loadingState: 'first-time-no-cache' | 'first-time-with-cache' | 'cached-for-user' = 'cached-for-user'
+  if (!fromCache && !userSearched) {
+    loadingState = 'first-time-no-cache'
+  } else if (fromCache && !userSearched) {
+    loadingState = 'first-time-with-cache'
+  } else {
+    loadingState = 'cached-for-user'
+  }
 
   // Streaming hooks — only active when shouldAnimate = true (fresh search)
-  const hookS       = useSimulatedStreaming(report?.hook,                        shouldAnimate,                       10, 130)
-  const oneLinerS   = useSimulatedStreaming(report?.oneLiner,                    shouldAnimate && hookS.isDone,       12, 115)
-  const dykS        = useSimulatedStreaming(report?.didYouKnow,                  shouldAnimate && oneLinerS.isDone,   11, 115)
-  const genesisS    = useSimulatedStreaming(report?.genesis,                     shouldAnimate && dykS.isDone,        12, 110)
-  const trajectoryS = useSimulatedStreaming(report?.trajectory,                  shouldAnimate && genesisS.isDone,    12, 110)
-  const currentS    = useSimulatedStreaming(report?.currentState,                shouldAnimate && trajectoryS.isDone, 12, 110)
+  const hookS       = useSimulatedStreaming(report?.hook,                        shouldStream,                       10, 130)
+  const oneLinerS   = useSimulatedStreaming(report?.oneLiner,                    shouldStream && hookS.isDone,       12, 115)
+  const dykS        = useSimulatedStreaming(report?.didYouKnow,                  shouldStream && oneLinerS.isDone,   11, 115)
+  const genesisS    = useSimulatedStreaming(report?.genesis,                     shouldStream && dykS.isDone,        12, 110)
+  const trajectoryS = useSimulatedStreaming(report?.trajectory,                  shouldStream && genesisS.isDone,    12, 110)
+  const currentS    = useSimulatedStreaming(report?.currentState,                shouldStream && trajectoryS.isDone, 12, 110)
 
   const hasAnnotations  = !!report && (report.annotations?.length ?? 0) > 0
   // Display text — streamed when animating, direct from report when cached
-  const hookText       = shouldAnimate ? hookS.displayedText       : (report?.hook ?? '')
-  const oneLinerText   = shouldAnimate ? oneLinerS.displayedText   : (report?.oneLiner ?? '')
-  const dykText        = shouldAnimate ? dykS.displayedText        : (report?.didYouKnow ?? '')
-  const genesisText    = shouldAnimate ? genesisS.displayedText    : (report?.genesis ?? '')
-  const trajectoryText = shouldAnimate ? trajectoryS.displayedText : (report?.trajectory ?? '')
-  const currentText    = shouldAnimate ? currentS.displayedText    : (report?.currentState ?? '')
+  const hookText       = shouldStream ? hookS.displayedText       : (report?.hook ?? '')
+  const oneLinerText   = shouldStream ? oneLinerS.displayedText   : (report?.oneLiner ?? '')
+  const dykText        = shouldStream ? dykS.displayedText        : (report?.didYouKnow ?? '')
+  const genesisText    = shouldStream ? genesisS.displayedText    : (report?.genesis ?? '')
+  const trajectoryText = shouldStream ? trajectoryS.displayedText : (report?.trajectory ?? '')
+  const currentText    = shouldStream ? currentS.displayedText    : (report?.currentState ?? '')
   // Visibility gates — sequential when animating, all true immediately when cached
-  const showOneLiner    = !shouldAnimate || hookS.isDone
-  const showDyk         = !shouldAnimate || oneLinerS.isDone
-  const showGenesis     = !shouldAnimate || dykS.isDone
-  const showTimeline    = !shouldAnimate || genesisS.isDone
-  const showTrajectory  = !shouldAnimate || showTimeline
-  const showEvolution   = !shouldAnimate || trajectoryS.isDone
-  const showCurrentState = !shouldAnimate || showEvolution
-  const showAnnotations = !shouldAnimate || (hasAnnotations && currentS.isDone)
-  const showFooter      = !shouldAnimate || currentS.isDone
+  const showOneLiner    = !shouldStream || hookS.isDone
+  const showDyk         = !shouldStream || oneLinerS.isDone
+  const showGenesis     = !shouldStream || dykS.isDone
+  const showTimeline    = !shouldStream || genesisS.isDone
+  const showTrajectory  = !shouldStream || showTimeline
+  const showEvolution   = !shouldStream || trajectoryS.isDone
+  const showCurrentState = !shouldStream || showEvolution
+  const showAnnotations = !shouldStream || (hasAnnotations && currentS.isDone)
+  const showFooter      = !shouldStream || currentS.isDone
 
   // Staggered delay for cached results (elements mount simultaneously)
   const d = (n: number) =>
-    shouldAnimate ? {} : { animationDelay: `${n * 80}ms` }
+    shouldStream ? {} : { animationDelay: `${n * 80}ms` }
 
   const getSourceTotal = (key: string) =>
     chartData
@@ -92,6 +108,11 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
   useEffect(() => {
     if (query) fetchSearchData(query)
   }, [query, fetchSearchData])
+
+  useEffect(() => {
+    // New query: reset transition lifecycle
+    setTransitionDone(false)
+  }, [query])
 
   return (
     <div className="w-full max-w-4xl mx-auto px-4 pt-20 pb-16 space-y-8">
@@ -119,8 +140,17 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
         </Alert>
       )}
 
-      {/* 2. Article skeleton while loading */}
-      {loading && (
+      {/* Loading Transition Overlay */}
+      {!transitionDone && (
+        <LoadingTransition 
+          state={loadingState}
+          isVisible={loading}
+          onHidden={() => setTransitionDone(true)}
+        />
+      )}
+
+      {/* 2. Article skeleton while loading (only show for cached-for-user) */}
+      {loading && loadingState === 'cached-for-user' && (
         <Card>
           <CardContent className="pt-6 space-y-6 pb-8">
             <Skeleton className="h-12 w-4/5" />
@@ -137,8 +167,8 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
       )}
 
       {/* Article card */}
-      {deepDive && data && (
-        <Card>
+      {showContent && (
+        <Card className={shouldStream ? '' : 'animate-in fade-in duration-300'}>
           <CardContent className="pt-6 pb-8 space-y-6">
 
             {/* Hook — always visible first */}
@@ -240,7 +270,7 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
       )}
 
       {/* Key Resources — appears after article is fully revealed */}
-      {mixedArtifacts.length > 0 && !loading && showFooter && (
+      {mixedArtifacts.length > 0 && transitionDone && !loading && showFooter && (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-4 px-1" style={d(10)}>
           <h2 className="text-xl font-bold">Key Resources</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
