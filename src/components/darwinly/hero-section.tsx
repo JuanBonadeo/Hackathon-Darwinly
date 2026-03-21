@@ -54,7 +54,7 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
   )
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center px-6 py-16">
+    <section id="hero" className="relative min-h-screen flex items-center justify-center px-6 py-16">
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute -top-24 left-[12%] h-64 w-64 rounded-full bg-foreground/5 blur-3xl" />
         <div className="absolute bottom-8 right-[8%] h-72 w-72 rounded-full bg-muted/60 blur-3xl" />
@@ -131,8 +131,7 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
           </div>
         </form>
 
-        {/* Free to use label */}
-        <p className="mt-4 text-sm text-muted-foreground/60 font-light">
+        <p className="mt-5 text-sm text-muted-foreground/60 font-light">
           Free to use · No sign-up required
         </p>
       </div>

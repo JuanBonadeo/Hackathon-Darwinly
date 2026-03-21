@@ -34,11 +34,9 @@ export function HowItWorksSection() {
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true)
-        }
+        setIsVisible(entry.isIntersecting)
       },
-      { threshold: 0.1 }
+      { threshold: 0.02, rootMargin: "0px 0px -8% 0px" }
     )
 
     if (sectionRef.current) {
@@ -49,30 +47,42 @@ export function HowItWorksSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} id="how-it-works" className="py-24 px-6">
+    <section ref={sectionRef} id="how-it-works" className="px-6 py-20 sm:py-24">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center">
-          <span className="section-kicker">Process</span>
-        </div>
+        <div className="mb-14 grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+          <div>
+            <span className="section-kicker">Process</span>
 
-        <h2 
-          className={cn(
-            "mt-5 text-3xl sm:text-4xl font-semibold text-center text-foreground mb-14 transition-all duration-700",
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-          )}
-        >
-          From curiosity to insight in seconds
-        </h2>
+            <h2
+              className={cn(
+                "mt-5 text-3xl sm:text-4xl font-semibold text-foreground transition-all duration-1200 ease-out",
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              )}
+            >
+              From curiosity to insight in seconds
+            </h2>
+          </div>
+
+          <p
+            className={cn(
+              "max-w-md text-sm leading-relaxed text-muted-foreground lg:justify-self-end",
+              "transition-all duration-1250 ease-out",
+              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            )}
+          >
+            A compact flow that keeps context while moving fast from search to interpretation.
+          </p>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {steps.map((step, index) => (
             <div
               key={step.title}
               className={cn(
-                "p-6 transition-all duration-700 rounded-xl border border-border/40 bg-muted/20 hover:bg-muted/40 hover:-translate-y-1",
+                "p-6 transition-all duration-1100 ease-out rounded-xl border border-border/40 bg-muted/20 hover:bg-muted/40 hover:-translate-y-1",
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               )}
-              style={{ transitionDelay: isVisible ? `${index * 100}ms` : "0ms" }}
+              style={{ transitionDelay: isVisible ? `${index * 140}ms` : "0ms" }}
             >
               <div className="mb-4">
                 <step.icon className="h-6 w-6 text-muted-foreground" />

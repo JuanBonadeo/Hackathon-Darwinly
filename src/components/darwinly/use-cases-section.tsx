@@ -29,11 +29,9 @@ export function UseCasesSection() {
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true)
-        }
+        setIsVisible(entry.isIntersecting)
       },
-      { threshold: 0.1 }
+      { threshold: 0.02, rootMargin: "0px 0px -8% 0px" }
     )
 
     if (sectionRef.current) {
@@ -44,30 +42,34 @@ export function UseCasesSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} id="use-cases" className="py-24 px-6">
+    <section ref={sectionRef} id="use-cases" className="px-6 py-20 sm:py-24">
       <div className="section-shell-alt max-w-6xl mx-auto px-6 py-12 sm:px-10 sm:py-14">
-        <div className="text-center">
+        <div className="mb-14 flex flex-col items-start gap-4 md:items-end md:text-right">
           <span className="section-kicker">Who uses it</span>
-        </div>
 
-        <h2 
-          className={cn(
-            "mt-5 text-3xl sm:text-4xl font-semibold text-center text-foreground mb-14 transition-all duration-700",
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-          )}
-        >
-          Built for the curious
-        </h2>
+          <h2
+            className={cn(
+              "text-3xl sm:text-4xl font-semibold text-foreground transition-all duration-1200 ease-out",
+              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            )}
+          >
+            Built for the curious
+          </h2>
+
+          <p className="max-w-lg text-sm text-muted-foreground">
+            Same engine, different reading goals depending on your role and the decisions you need to make.
+          </p>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {useCases.map((useCase, index) => (
             <div
               key={useCase.persona}
               className={cn(
-                "feature-card p-8 transition-all duration-700",
+                "feature-card p-8 transition-all duration-1100 ease-out",
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               )}
-              style={{ transitionDelay: isVisible ? `${index * 100}ms` : "0ms" }}
+              style={{ transitionDelay: isVisible ? `${index * 140}ms` : "0ms" }}
             >
               <div className="mb-4">
                 <useCase.icon className="h-8 w-8 text-foreground" />

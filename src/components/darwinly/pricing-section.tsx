@@ -42,11 +42,9 @@ export function PricingSection() {
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true)
-        }
+        setIsVisible(entry.isIntersecting)
       },
-      { threshold: 0.1 }
+      { threshold: 0.02, rootMargin: "0px 0px -8% 0px" }
     )
 
     if (sectionRef.current) {
@@ -57,36 +55,36 @@ export function PricingSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} id="pricing" className="py-24 px-6">
-      <div className="section-shell max-w-5xl mx-auto px-6 py-12 sm:px-10 sm:py-14">
-        <div className="text-center">
+    <section ref={sectionRef} id="pricing" className="px-6 py-28">
+      <div className="section-shell overflow-visible! max-w-5xl mx-auto px-6 py-12 sm:px-10 sm:py-14">
+        <div className="mb-14">
           <span className="section-kicker">Plans</span>
-        </div>
 
-        <h2 
-          className={cn(
-            "mt-5 text-3xl sm:text-4xl font-semibold text-center text-foreground mb-14 transition-all duration-700",
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-          )}
-        >
-          Simple, transparent pricing
-        </h2>
+          <h2
+            className={cn(
+              "mt-5 max-w-2xl text-3xl sm:text-4xl font-semibold text-foreground transition-all duration-1200 ease-out",
+              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            )}
+          >
+            Simple, transparent pricing
+          </h2>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
           {plans.map((plan, index) => (
             <div
               key={plan.name}
               className={cn(
-                "feature-card relative p-8 transition-all duration-700",
+                "feature-card relative p-8 transition-all duration-1100 ease-out",
                 plan.popular 
-                  ? "border-foreground/30 ring-1 ring-foreground/10" 
+                  ? "border-foreground/30 ring-1 ring-foreground/10 pt-12" 
                   : "border-border",
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               )}
-              style={{ transitionDelay: isVisible ? `${index * 100}ms` : "0ms" }}
+              style={{ transitionDelay: isVisible ? `${index * 160}ms` : "0ms" }}
             >
               {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <div className="absolute left-1/2 top-3 -translate-x-1/2">
                   <span className="bg-foreground text-background text-xs font-medium px-3 py-1 rounded-full">
                     Most popular
                   </span>
@@ -110,7 +108,7 @@ export function PricingSection() {
               <ul className="space-y-3 mb-8">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-center gap-3 text-sm text-muted-foreground">
-                    <Check className="h-4 w-4 text-foreground flex-shrink-0" />
+                    <Check className="h-4 w-4 shrink-0 text-foreground" />
                     {feature}
                   </li>
                 ))}

@@ -10,6 +10,7 @@ import { FeaturesSection } from "@/components/darwinly/features-section"
 import { UseCasesSection } from "@/components/darwinly/use-cases-section"
 import { PricingSection } from "@/components/darwinly/pricing-section"
 import { Footer } from "@/components/darwinly/footer"
+import { LandingJourney } from "@/components/darwinly/landing-journey"
 import { cn } from "@/lib/utils"
 
 const SEARCH_HISTORY_KEY = "darwinly-search-history"
@@ -72,6 +73,7 @@ export default function HomePage() {
         )}
       >
         <Navbar isDesktopSidebarExpanded={isDesktopSidebarExpanded} />
+        <LandingJourney />
 
         <main>
           <HeroSection onSearch={handleSearch} />

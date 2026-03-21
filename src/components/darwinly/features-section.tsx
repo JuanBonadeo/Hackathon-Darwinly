@@ -50,11 +50,9 @@ export function FeaturesSection() {
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true)
-        }
+        setIsVisible(entry.isIntersecting)
       },
-      { threshold: 0.1 }
+      { threshold: 0.02, rootMargin: "0px 0px -8% 0px" }
     )
 
     if (sectionRef.current) {
@@ -65,30 +63,34 @@ export function FeaturesSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} id="features" className="py-24 px-6">
-      <div className="section-shell max-w-6xl mx-auto px-6 py-12 sm:px-10 sm:py-14">
+    <section ref={sectionRef} id="features" className="px-6 py-28">
+      <div className="section-shell max-w-6xl mx-auto px-6 py-14 sm:px-10 sm:py-16">
         <div className="text-center">
           <span className="section-kicker">Knowledge lenses</span>
         </div>
 
         <h2 
           className={cn(
-            "mt-5 text-3xl sm:text-4xl font-semibold text-center text-foreground mb-14 transition-all duration-700",
+            "mx-auto mt-5 max-w-2xl text-3xl sm:text-4xl font-semibold text-center text-foreground mb-6 transition-all duration-1200 ease-out",
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           )}
         >
           One search. Six dimensions of knowledge.
         </h2>
 
+        <p className="mx-auto mb-14 max-w-2xl text-center text-sm text-muted-foreground">
+          Each lens captures a different signal, so the same concept can be read as science, culture, media and collective attention.
+        </p>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, index) => (
             <div
               key={feature.title}
               className={cn(
-                "feature-card p-6 transition-all duration-700",
+                "feature-card p-6 transition-all duration-1100 ease-out",
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               )}
-              style={{ transitionDelay: isVisible ? `${index * 100}ms` : "0ms" }}
+              style={{ transitionDelay: isVisible ? `${index * 140}ms` : "0ms" }}
             >
               <div className="mb-4">
                 <feature.icon className="h-6 w-6 text-foreground" />
