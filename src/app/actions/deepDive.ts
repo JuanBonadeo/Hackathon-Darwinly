@@ -10,9 +10,11 @@ import { fetchWikipediaYearly } from "@/lib/apis/wikipedia";
 import { sleep } from "@/lib/apis/common";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { normalizeQuery, validateNormalizedQuery } from "@/actions/search";
+import { normalizeQuery, validateNormalizedQuery } from "@/app/actions/search";
 import { fetchWorldBankMacro, type WorldBankMacro } from "@/lib/apis/worldbank";
-import type { Artifact, YearlyDataPoint, YearlySeries } from "@/types/strata";
+import { fetchGitHubData, type GitHubData } from "@/lib/apis/github";
+import { detectGitHubRepo } from "./is-tech-query";
+import type { Artifact, TimelineAnnotation, YearlyDataPoint, YearlySeries } from "@/types/strata";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,12 +30,14 @@ export interface DeepDiveReport {
   currentState: string;
   didYouKnow: string;
   phase: "genesis" | "rise" | "peak" | "consolidation" | "decline";
+  annotations?: TimelineAnnotation[];
 }
 
 export interface DeepDiveFullResponse {
   report: DeepDiveReport;
   sources: Record<string, YearlyDataPoint[]>;
   artifacts: Artifact[];
+  github?: GitHubData | null;
   fromCache?: boolean;
   userSearched?: boolean; // true if user has searched this before
 }
@@ -222,6 +226,9 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
   const cacheQuery = normalizedQuery.toLowerCase();
   const ENDPOINT = "deep-dive-full";
 
+  const githubRepo = await detectGitHubRepo(cacheQuery);
+  console.log("[DeepDive] GitHub repo detection", { query: cacheQuery, githubRepo });
+
   let userId: string | null = null;
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -271,7 +278,7 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
   console.log("[DeepDive] Fetching sources", { query: cacheQuery });
   const start = Date.now();
 
-  const [wikipedia, books, papers, movies, news, macro, artifactBooks, artifactPapers, artifactMovies] =
+  const [wikipedia, books, papers, movies, news, macro, artifactBooks, artifactPapers, artifactMovies, github] =
     await Promise.all([
       withTimeout(
         fetchWikipediaYearly(cacheQuery, endDate),
@@ -318,6 +325,11 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
       withTimeout(fetchOpenLibraryTopBooks(cacheQuery, yearStart, yearEnd), 15_000, []),
       withTimeout(fetchArtifactPapers(cacheQuery, yearStart, yearEnd), 45_000, []),
       withTimeout(fetchArtifactMovies(cacheQuery, yearStart, yearEnd), 10_000, []),
+      withTimeout(
+        fetchGitHubData(cacheQuery, githubRepo),
+        15_000,
+        null,
+      ),
     ]);
 
   // ─── Build artifact candidate pool for Gemini ──────────────────────────────
@@ -404,6 +416,13 @@ If the query is a technology, focus on adoption narratives and hype cycles, not 
 
   "phase": "one of: genesis | rise | peak | consolidation | decline — based on most recent trend",
 
+  "annotations": [
+    // 1 to 3 notable moments clearly visible in the data. Each must be grounded in the signal data above.
+    // type: "inflection" (trend changed direction), "peak" (highest attention moment), "milestone" (key cultural event that shows in data)
+    // explanation: 1 sentence max 120 chars — name the specific real-world event or cause, not just "interest increased"
+    { "year": number, "type": "inflection" | "peak" | "milestone", "explanation": "..." }
+  ],
+
   "selectedArtifacts": [i, j, k]  // exactly 3 indices from the ARTIFACT CANDIDATES list. Pick the ones with the greatest cultural reach and relevance — not just the highest score. Prefer variety across categories (Book, Paper, Movie) when meaningful. If fewer than 3 candidates exist, return fewer.
 }`;
 
@@ -431,6 +450,7 @@ If the query is a technology, focus on adoption narratives and hype cycles, not 
     report: report as DeepDiveReport,
     sources,
     artifacts,
+    github,
     userSearched: false, // New search, not from user's history
   };
 

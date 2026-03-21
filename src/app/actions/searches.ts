@@ -1,7 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
-import { normalizeQuery } from "@/actions/search";
+import { normalizeQuery } from "@/app/actions/search";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 

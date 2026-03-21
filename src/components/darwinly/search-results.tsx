@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AlertCircle, ArrowLeft, ExternalLink } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { GitHubActivity } from './GitHubActivity'
 
 interface SearchResultsProps {
   query: string
@@ -198,6 +199,7 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 my-8" style={d(4)}>
                 <DarwinlyTimeline
                   data={data}
+                  annotations={deepDive.report.annotations}
                 />
               </div>
             )}
@@ -254,7 +256,12 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
               </div>
             )}
 
-            
+            {/* Developer Activity — only when GitHub data is available */}
+            {showFooter && deepDive?.github && (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-700" style={d(8)}>
+                <GitHubActivity data={deepDive.github} />
+              </div>
+            )}
 
 
           </CardContent>
