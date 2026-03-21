@@ -24,10 +24,10 @@ const SOURCE_CONFIG = {
   news:      { label: 'News',      color: '#60A5FA' },
 }
 
-const ARTIFACT_CONFIG: Record<string, { label: string; accent: string; emoji: string }> = {
-  openlibrary:     { label: 'Book',  accent: '#1E3A8A', emoji: '📚' },
-  semanticscholar: { label: 'Paper', accent: '#1D4ED8', emoji: '📄' },
-  tmdb:            { label: 'Movie', accent: '#3B82F6', emoji: '🎬' },
+const ARTIFACT_CONFIG: Record<string, { label: string; accent: string; hasLink: boolean }> = {
+  openlibrary:     { label: 'Book',  accent: '#1E3A8A', hasLink: true  },
+  semanticscholar: { label: 'Paper', accent: '#1D4ED8', hasLink: false },
+  tmdb:            { label: 'Movie', accent: '#3B82F6', hasLink: false },
 }
 
 function formatTotal(n: number): string {
@@ -241,73 +241,51 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
 
       {/* Key Resources — appears after article is fully revealed */}
       {mixedArtifacts.length > 0 && !loading && showFooter && (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-4 px-1" style={d(10)}>
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-5 px-1" style={d(10)}>
           <h2 className="text-xl font-bold">Key Resources</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {mixedArtifacts.map((item, i) => {
               const cfg = ARTIFACT_CONFIG[item.source]
-              return item.imageUrl ? (
-                <div
+              const canLink = cfg?.hasLink && !!item.url
+              const Wrapper = canLink ? 'a' : 'div'
+              const wrapperProps = canLink
+                ? { href: item.url, target: '_blank', rel: 'noreferrer' }
+                : {}
+
+              return (
+                <Wrapper
                   key={`${item.source}-${item.title}-${i}`}
-                  className="group rounded-xl border overflow-hidden flex flex-col hover:shadow-lg transition-shadow"
+                  {...wrapperProps}
+                  className="group flex flex-col rounded-2xl overflow-hidden shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 min-h-52"
+                  style={{ background: `linear-gradient(135deg, ${cfg?.accent}20 0%, ${cfg?.accent}06 100%)` }}
                 >
-                  <div className="relative h-52 overflow-hidden">
-                    <img
-                      src={item.imageUrl}
-                      alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-linear-to-t from-black/75 via-black/20 to-transparent" />
-                    <span className="absolute top-2 left-2 text-xs bg-black/60 text-white rounded-full px-2 py-0.5 font-medium">
-                      {cfg?.emoji} {cfg?.label}
+                  <div className="h-1 w-full" style={{ background: cfg?.accent ?? '#1D4ED8' }} />
+
+                  <div className="flex flex-col flex-1 p-5 gap-3">
+                    <span
+                      className="self-start text-xs font-semibold px-2.5 py-1 rounded-full tracking-wide uppercase"
+                      style={{ background: `${cfg?.accent}20`, color: cfg?.accent }}
+                    >
+                      {cfg?.label}
                     </span>
-                    <div className="absolute bottom-3 left-3 right-3">
-                      <p className="text-white font-semibold text-sm leading-snug line-clamp-2">{item.title}</p>
-                      <p className="text-white/70 text-xs mt-0.5">{item.year}</p>
-                    </div>
-                  </div>
-                  {item.url && (
-                    <div className="px-3 py-2.5 border-t">
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
-                      >
-                        View <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div
-                  key={`${item.source}-${item.title}-${i}`}
-                  className="group rounded-xl border overflow-hidden flex flex-col hover:shadow-lg transition-shadow"
-                >
-                  <div className="h-1" style={{ background: cfg?.accent ?? '#1D4ED8' }} />
-                  <div className="p-4 flex flex-col gap-2 flex-1">
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {cfg?.emoji} {cfg?.label}
-                    </span>
-                    <p className="font-semibold text-sm leading-snug line-clamp-3">{item.title}</p>
-                    {item.author && (
-                      <p className="text-xs text-muted-foreground truncate">{item.author}</p>
-                    )}
-                    <div className="flex items-center justify-between mt-auto pt-3">
-                      <span className="text-xs text-muted-foreground">{item.year}</span>
-                      {item.url && (
-                        <a
-                          href={item.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
-                        >
-                          View <ExternalLink className="h-3 w-3" />
-                        </a>
+
+                    <p className="font-bold text-base leading-snug line-clamp-4 flex-1">{item.title}</p>
+
+                    <div className="space-y-0.5">
+                      {item.author && (
+                        <p className="text-sm text-muted-foreground truncate">{item.author}</p>
                       )}
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-xs text-muted-foreground font-medium">{item.year}</span>
+                        {canLink && (
+                          <span className="text-xs font-semibold flex items-center gap-1 group-hover:underline" style={{ color: cfg?.accent }}>
+                            View <ExternalLink className="h-3 w-3" />
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                </Wrapper>
               )
             })}
           </div>

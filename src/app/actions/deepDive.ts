@@ -198,7 +198,7 @@ async function fetchArtifactMovies(
         title: m.title ?? "Unknown",
         year: Number(m.release_date!.slice(0, 4)),
         score: m.popularity ?? 0,
-        imageUrl: m.poster_path ? `https://image.tmdb.org/t/p/w200${m.poster_path}` : undefined,
+        imageUrl: m.poster_path ? `https://image.tmdb.org/t/p/w500${m.poster_path}` : undefined,
         source: "tmdb" as const,
       }))
       .sort((a, b) => b.score - a.score);
