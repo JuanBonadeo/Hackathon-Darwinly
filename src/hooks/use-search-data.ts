@@ -21,7 +21,7 @@ export const useSearchData = () => {
   const transformDataForChart = useCallback((response: SearchResponse) => {
     // Collect all unique years
     const yearsSet = new Set<number>()
-    
+
     Object.values(response.sources).forEach((items) => {
       if (Array.isArray(items)) {
         items.forEach((item) => yearsSet.add(item.year))

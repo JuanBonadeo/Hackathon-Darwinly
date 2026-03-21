@@ -87,7 +87,7 @@ export function Sidebar({
             <span className="sr-only">Toggle menu</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-[260px] p-0 bg-sidebar border-sidebar-border">
+        <SheetContent side="left" className="w-65 p-0 bg-sidebar border-sidebar-border">
           <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
           <SidebarContent 
             searchHistory={searchHistory} 
@@ -289,16 +289,22 @@ function SidebarContent({
             <Button
               variant="outline"
               className="w-full justify-start gap-2 border-border bg-transparent hover:bg-sidebar-accent"
+              asChild
             >
-              <LogIn className="h-14 w-14" />
-              Log in
+              <Link href="/sign-in">
+                <LogIn className="h-4 w-4" />
+                Log in
+              </Link>
             </Button>
             <Button
               variant="outline"
               className="w-full justify-start gap-2 border-border bg-transparent hover:bg-sidebar-accent"
+              asChild
             >
-              <UserPlus className="h-14 w-14" />
-              Sign up
+              <Link href="/sign-up">
+                <UserPlus className="h-4 w-4" />
+                Sign up
+              </Link>
             </Button>
           </div>
         </>
@@ -309,9 +315,12 @@ function SidebarContent({
             size="icon"
             className="h-11 w-11 border-border bg-transparent hover:bg-sidebar-accent"
             title="Sign in"
+            asChild
           >
-            <LogIn className="h-14 w-14" />
-            <span className="sr-only">Sign in</span>
+            <Link href="/sign-in">
+              <LogIn className="h-4 w-4" />
+              <span className="sr-only">Sign in</span>
+            </Link>
           </Button>
         </div>
       )}
