@@ -10,12 +10,14 @@ const TRENDING_CONCEPTS = [
   "Bitcoin",
   "Blockchain",
   "Climate Change",
-  "COVID-19",
+  "Donald Trump",
   "Elon Musk",
+  "Javier Milei",
   "Quantum Computing",
   "Racism",
   "Ukraine War",
-  "World War III"
+  "World War III",
+
 ]
 
 interface HeroSectionProps {
