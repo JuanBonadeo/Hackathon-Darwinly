@@ -32,9 +32,9 @@ const Z_SCALE_META = {
     description: 'Percent of each year total',
   },
   [Z_SCALE_MODES.SOURCE_RELATIVE]: {
-    axisName: 'Source Relative % (Z)',
-    valueLabel: 'Source Relative',
-    description: 'Percent of source peak (all years)',
+    axisName: 'Relative Activity % (Z)',
+    valueLabel: 'Relative Activity',
+    description: 'Normalized to each source peak (all years)',
   },
   [Z_SCALE_MODES.SOURCE_LOG_RELATIVE]: {
     axisName: 'Source Log Relative % (Z)',
@@ -188,6 +188,25 @@ function getBarBorderColor(sourceIndex, state = 'normal') {
   return blendHexColor(baseColor, '#000000', 0.4)
 }
 
+const THEME_STYLES = {
+  dark: {
+    axisNameColor: '#a6a6ba',
+    axisLabelColor: '#999',
+    axisLineColor: '#2a2a44',
+    tooltipMetaColor: '#a6a6ba',
+  },
+  light: {
+    axisNameColor: '#000000',
+    axisLabelColor: '#000000',
+    axisLineColor: '#94a3b8',
+    tooltipMetaColor: '#000000',
+  },
+}
+
+function getThemeStyles(isDarkMode) {
+  return isDarkMode ? THEME_STYLES.dark : THEME_STYLES.light
+}
+
 export default class Darwinly3DChart {
   constructor(containerId, data, options = {}) {
     this.containerId = containerId
@@ -202,6 +221,7 @@ export default class Darwinly3DChart {
     
     this.chart = null
     this.resizeObserver = null
+    this.onBarClick = null
   }
   
   /**
@@ -219,6 +239,8 @@ export default class Darwinly3DChart {
     if (!this.chart) {
       this.chart = window.echarts.init(container, null, { renderer: 'gl' })
     }
+
+    this._setupChartInteractions()
     
     // Build chart options
     const chartOptions = this._buildChartOptions()
@@ -259,9 +281,38 @@ export default class Darwinly3DChart {
     }
     
     if (this.chart) {
+      if (this.onBarClick) {
+        this.chart.off('click', this.onBarClick)
+        this.onBarClick = null
+      }
       this.chart.dispose()
       this.chart = null
     }
+  }
+
+  _setupChartInteractions() {
+    if (!this.chart) {
+      return
+    }
+
+    if (this.onBarClick) {
+      this.chart.off('click', this.onBarClick)
+    }
+
+    this.onBarClick = (params) => {
+      if (params.componentSubType !== 'bar3D') {
+        return
+      }
+
+      const rawYear = params?.value?.[0]
+      const year = Number(rawYear)
+
+      if (Number.isFinite(year) && typeof this.options.onYearSelect === 'function') {
+        this.options.onYearSelect(year)
+      }
+    }
+
+    this.chart.on('click', this.onBarClick)
   }
   
   /**
@@ -270,6 +321,7 @@ export default class Darwinly3DChart {
   _buildChartOptions() {
     const { rows, years } = buildDataset(this.data.sources, this.options.zScaleMode)
     const scaleMeta = getScaleMeta(this.options.zScaleMode)
+    const themeStyles = getThemeStyles(this.options.isDarkMode !== false)
     
     return {
       tooltip: {
@@ -286,7 +338,7 @@ export default class Darwinly3DChart {
                 <div>Count: <strong>${rawCount.toLocaleString()}</strong></div>
                 <div>Year Total: <strong>${yearTotal.toLocaleString()}</strong></div>
                 <div>Source Peak: <strong>${sourceMax.toLocaleString()}</strong></div>
-                <div style="margin-top:6px;color:#a6a6ba;font-size:12px;">Scale: ${scaleMeta.description}</div>
+                <div style="margin-top:6px;color:${themeStyles.tooltipMetaColor};font-size:12px;">Scale: ${scaleMeta.description}</div>
               </div>
             `.trim()
           }
@@ -317,7 +369,7 @@ export default class Darwinly3DChart {
         
         axisLine: {
           lineStyle: {
-            color: '#2a2a44',
+            color: themeStyles.axisLineColor,
           },
         },
         
@@ -336,16 +388,16 @@ export default class Darwinly3DChart {
         name: 'Year (X)',
         nameGap: 18,
         nameTextStyle: {
-          color: '#a6a6ba',
+          color: themeStyles.axisNameColor,
           fontSize: 13,
         },
         axisLabel: {
           fontSize: 12,
-          color: '#999',
+          color: themeStyles.axisLabelColor,
         },
         axisLine: {
           lineStyle: {
-            color: '#2a2a44',
+            color: themeStyles.axisLineColor,
           },
         },
         splitLine: {
@@ -362,17 +414,17 @@ export default class Darwinly3DChart {
         name: 'Source (Y)',
         nameGap: 18,
         nameTextStyle: {
-          color: '#a6a6ba',
+          color: themeStyles.axisNameColor,
           fontSize: 13,
         },
         axisLabel: {
           fontSize: 12,
-          color: '#999',
+          color: themeStyles.axisLabelColor,
           formatter: (value) => getSourceLabel(value),
         },
         axisLine: {
           lineStyle: {
-            color: '#2a2a44',
+            color: themeStyles.axisLineColor,
           },
         },
         splitLine: {
@@ -388,19 +440,19 @@ export default class Darwinly3DChart {
         name: scaleMeta.axisName,
         nameGap: 20,
         nameTextStyle: {
-          color: '#a6a6ba',
+          color: themeStyles.axisNameColor,
           fontSize: 13,
         },
         axisLabel: {
           formatter: (value) => `${value}%`,
           fontSize: 12,
-          color: '#999',
+          color: themeStyles.axisLabelColor,
         },
         min: 0,
         max: 100,
         axisLine: {
           lineStyle: {
-            color: '#2a2a44',
+            color: themeStyles.axisLineColor,
           },
         },
         splitLine: {

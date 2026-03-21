@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   CartesianGrid,
   Dot,
@@ -41,6 +41,7 @@ interface TimelineData {
 
 interface DarwinlyTimelineProps {
   data: TimelineData
+  selectedYear?: number | null
 }
 
 interface TimelineChartPoint {
@@ -63,7 +64,7 @@ function formatAxisValue(value: number): string {
   return value.toString()
 }
 
-export function DarwinlyTimeline({ data }: DarwinlyTimelineProps) {
+export function DarwinlyTimeline({ data, selectedYear = null }: DarwinlyTimelineProps) {
   const [explanations, setExplanations] = useState<Record<number, string>>({})
   const [loading, setLoading] = useState<Record<number, boolean>>({})
   const [selected, setSelected] = useState<number | null>(null)
@@ -121,6 +122,14 @@ export function DarwinlyTimeline({ data }: DarwinlyTimelineProps) {
     setExplanations((prev) => ({ ...prev, [year]: response }))
     setLoading((prev) => ({ ...prev, [year]: false }))
   }
+
+  useEffect(() => {
+    if (selectedYear === null || Number.isNaN(selectedYear)) {
+      return
+    }
+
+    void selectPeakYear(selectedYear)
+  }, [selectedYear])
 
   return (
     <Card>

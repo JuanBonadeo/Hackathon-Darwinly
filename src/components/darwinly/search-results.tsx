@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchData } from '@/hooks/use-search-data'
 import { Darwinly3DChartWrapper } from './darwinly-3d-chart-wrapper'
 import { DarwinlyTimeline } from './DarwinlyTimeline'
@@ -41,6 +41,7 @@ const SOURCE_BREAKDOWN_CONFIG = {
 }
 
 export function SearchResults({ query, onBack }: SearchResultsProps) {
+  const [selectedYear, setSelectedYear] = useState<number | null>(null)
   const {
     data,
     deepDive,
@@ -119,6 +120,7 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
   useEffect(() => {
     if (query) {
       fetchSearchData(query)
+      setSelectedYear(null)
     }
   }, [query, fetchSearchData])
 
@@ -199,7 +201,7 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
       {data && !loading && (
         <>
           {/* Timeline Signals */}
-          <DarwinlyTimeline data={data} />
+          <DarwinlyTimeline data={data} selectedYear={selectedYear} />
 
           {/* Deep Dive narrative — entre los dos gráficos */}
           {!insightsLoading && deepDive && (
@@ -242,6 +244,7 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
             autoRotate={true}
             rotateSpeed={4}
             zScaleMode="source_relative"
+            onYearSelect={setSelectedYear}
           />
 
           {/* Source Breakdown — Tabs */}

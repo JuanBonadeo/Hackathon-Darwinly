@@ -2,10 +2,16 @@
 
 import { useEffect, useRef, useState } from 'react'
 import * as echarts from 'echarts'
+import { useTheme } from 'next-themes'
 import Darwinly3DChart from './Darwinly3DChart'
 import { SearchResponse } from '@/types/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
+
+type EchartsWindow = Window & {
+  echarts?: typeof echarts
+  echartsGL?: unknown
+}
 
 interface Darwinly3DChartWrapperProps {
   data: SearchResponse
@@ -13,6 +19,7 @@ interface Darwinly3DChartWrapperProps {
   autoRotate?: boolean
   rotateSpeed?: number
   zScaleMode?: 'year_share' | 'source_relative' | 'source_log_relative' | 'log_global'
+  onYearSelect?: (year: number) => void
 }
 
 export function Darwinly3DChartWrapper({
@@ -21,21 +28,27 @@ export function Darwinly3DChartWrapper({
   autoRotate = true,
   rotateSpeed = 4,
   zScaleMode = 'source_log_relative',
+  onYearSelect,
 }: Darwinly3DChartWrapperProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<InstanceType<typeof Darwinly3DChart> | null>(null)
-  const [echartsGlLoaded, setEchartsGlLoaded] = useState(false)
+  const [echartsGlLoaded, setEchartsGlLoaded] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return Boolean((window as EchartsWindow).echartsGL)
+  })
+  const { resolvedTheme } = useTheme()
+  const isDarkMode = resolvedTheme !== 'light'
 
   // Load echarts-gl from CDN
   useEffect(() => {
     if (typeof window === 'undefined') return
+    const windowWithEcharts = window as EchartsWindow
     
     // Make echarts available globally
-    ;(window as any).echarts = echarts
+    windowWithEcharts.echarts = echarts
 
     // Check if echarts-gl is already loaded
-    if ((window as any).echartsGL) {
-      setEchartsGlLoaded(true)
+    if (windowWithEcharts.echartsGL) {
       return
     }
 
@@ -71,6 +84,8 @@ export function Darwinly3DChartWrapper({
           autoRotate,
           rotateSpeed,
           zScaleMode,
+          isDarkMode,
+          onYearSelect,
         }
       )
       chartRef.current.render()
@@ -86,15 +101,16 @@ export function Darwinly3DChartWrapper({
         chartRef.current = null
       }
     }
-  }, [echartsGlLoaded, data, barSize, autoRotate, rotateSpeed, zScaleMode])
+  }, [echartsGlLoaded, data, barSize, autoRotate, rotateSpeed, zScaleMode, isDarkMode, onYearSelect])
 
   return (
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="text-2xl sm:text-3xl">3D Evolution Map</CardTitle>
-        <CardDescription className="text-base sm:text-lg leading-relaxed">
-          X = year, Y = source, and bar height = activity level. Drag to rotate and
-          zoom for a clearer view of each peak.
+        <CardDescription className="text-sm sm:text-base leading-relaxed space-y-1.5">
+          <p>X axis: Year timeline.</p>
+          <p>Y axis: Data source.</p>
+          <p>Z axis: Relative activity level.</p>
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0">
