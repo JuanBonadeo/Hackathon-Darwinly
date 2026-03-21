@@ -10,8 +10,8 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   try {
-    const report = await deepDiveAction(query);
-    return NextResponse.json(report);
+    const data = await deepDiveAction(query);
+    return NextResponse.json(data);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
     console.error("[DeepDive] Route error", message);
