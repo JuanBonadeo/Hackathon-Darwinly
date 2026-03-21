@@ -5,7 +5,7 @@ import * as echarts from 'echarts'
 import { useTheme } from 'next-themes'
 import Darwinly3DChart from './Darwinly3DChart'
 import { SearchResponse } from '@/types/api'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
 
 type EchartsWindow = Window & {
@@ -106,12 +106,7 @@ export function Darwinly3DChartWrapper({
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="text-2xl sm:text-3xl">3D Evolution Map</CardTitle>
-        <CardDescription className="text-sm sm:text-base leading-relaxed space-y-1.5">
-          <p>X axis: Year timeline.</p>
-          <p>Y axis: Data source.</p>
-          <p>Z axis: Relative activity level.</p>
-        </CardDescription>
+        <CardTitle className="text-2xl sm:text-3xl">Evolution Map</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         {!echartsGlLoaded && (
