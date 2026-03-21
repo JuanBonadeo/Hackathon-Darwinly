@@ -21,6 +21,7 @@ const SOURCE_NAMES = ['wikipedia', 'books', 'papers', 'movies', 'news']
 const Z_SCALE_MODES = {
   YEAR_SHARE: 'year_share',
   SOURCE_RELATIVE: 'source_relative',
+  SOURCE_LOG_RELATIVE: 'source_log_relative',
   LOG_GLOBAL: 'log_global',
 }
 
@@ -34,6 +35,11 @@ const Z_SCALE_META = {
     axisName: 'Source Relative % (Z)',
     valueLabel: 'Source Relative',
     description: 'Percent of source peak (all years)',
+  },
+  [Z_SCALE_MODES.SOURCE_LOG_RELATIVE]: {
+    axisName: 'Source Log Relative % (Z)',
+    valueLabel: 'Source Log Relative',
+    description: 'Log-scaled against source peak (all years)',
   },
   [Z_SCALE_MODES.LOG_GLOBAL]: {
     axisName: 'Log Index % (Z)',
@@ -116,11 +122,17 @@ function buildDataset(sources, scaleMode) {
       const sourceMax = sourceMaxMap.get(sourceName) || 0
       const yearShare = yearTotal > 0 ? (count / yearTotal) * 100 : 0
       const sourceRelative = sourceMax > 0 ? (count / sourceMax) * 100 : 0
+      const sourceLogRelative = sourceMax > 0
+        ? (Math.log10(count + 1) / Math.log10(sourceMax + 1)) * 100
+        : 0
       const logGlobal = globalLogMax > 0 ? (Math.log10(count + 1) / globalLogMax) * 100 : 0
 
       let zValue = sourceRelative
       if (scaleMode === Z_SCALE_MODES.YEAR_SHARE) {
         zValue = yearShare
+      }
+      if (scaleMode === Z_SCALE_MODES.SOURCE_LOG_RELATIVE) {
+        zValue = sourceLogRelative
       }
       if (scaleMode === Z_SCALE_MODES.LOG_GLOBAL) {
         zValue = logGlobal
@@ -184,7 +196,7 @@ export default class Darwinly3DChart {
       barSize: 8,
       autoRotate: true,
       rotateSpeed: 4,
-      zScaleMode: Z_SCALE_MODES.SOURCE_RELATIVE,
+      zScaleMode: Z_SCALE_MODES.SOURCE_LOG_RELATIVE,
       ...options,
     }
     

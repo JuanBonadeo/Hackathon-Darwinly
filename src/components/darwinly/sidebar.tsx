@@ -87,7 +87,7 @@ export function Sidebar({
             <span className="sr-only">Toggle menu</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-[260px] p-0 bg-sidebar border-sidebar-border">
+        <SheetContent side="left" className="w-65 p-0 bg-sidebar border-sidebar-border">
           <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
           <SidebarContent 
             searchHistory={searchHistory} 

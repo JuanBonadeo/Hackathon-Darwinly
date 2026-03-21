@@ -1,7 +1,6 @@
 ﻿'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { useSearchData } from '@/hooks/use-search-data'
 import { Darwinly3DChartWrapper } from './darwinly-3d-chart-wrapper'
 import { DarwinlyTimeline } from './DarwinlyTimeline'
@@ -13,6 +12,7 @@ import type { ArtifactItem } from '@/types/api'
 
 interface SearchResultsProps {
   query: string
+  onBack: () => void
 }
 
 const SOURCE_BREAKDOWN_CONFIG = {
@@ -38,8 +38,7 @@ const SOURCE_BREAKDOWN_CONFIG = {
   },
 }
 
-export function SearchResults({ query }: SearchResultsProps) {
-  const router = useRouter()
+export function SearchResults({ query, onBack }: SearchResultsProps) {
   const {
     data,
     deepDive,
@@ -98,7 +97,7 @@ export function SearchResults({ query }: SearchResultsProps) {
           type="button"
           variant="outline"
           size="lg"
-          onClick={() => router.push("/")}
+          onClick={onBack}
           className="h-11 min-w-[168px] px-5 gap-2 shrink-0 rounded-full bg-card/60 hover:bg-card cursor-pointer"
           aria-label="Back to Home"
           title="Back to Home"

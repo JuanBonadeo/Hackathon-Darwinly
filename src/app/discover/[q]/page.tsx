@@ -73,7 +73,7 @@ export default function DiscoverPage({ params }: { params: Promise<{ q: string }
       >
         <Navbar isDesktopSidebarExpanded={isDesktopSidebarExpanded} />
         <main>
-          <SearchResults query={query} />
+          <SearchResults query={query} onBack={() => router.push("/")} />
         </main>
         <Footer />
       </div>

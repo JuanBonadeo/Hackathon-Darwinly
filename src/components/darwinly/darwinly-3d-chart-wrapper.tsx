@@ -12,7 +12,7 @@ interface Darwinly3DChartWrapperProps {
   barSize?: number
   autoRotate?: boolean
   rotateSpeed?: number
-  zScaleMode?: 'year_share' | 'source_relative' | 'log_global'
+  zScaleMode?: 'year_share' | 'source_relative' | 'source_log_relative' | 'log_global'
 }
 
 export function Darwinly3DChartWrapper({
@@ -20,7 +20,7 @@ export function Darwinly3DChartWrapper({
   barSize = 8,
   autoRotate = true,
   rotateSpeed = 4,
-  zScaleMode = 'source_relative',
+  zScaleMode = 'source_log_relative',
 }: Darwinly3DChartWrapperProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<InstanceType<typeof Darwinly3DChart> | null>(null)
