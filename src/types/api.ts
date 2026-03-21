@@ -25,3 +25,44 @@ export interface ChartData {
   movies?: number
   news?: number
 }
+
+export interface ArtifactItem {
+  title: string
+  author?: string
+  year: number
+  score: number
+  url?: string
+  imageUrl?: string
+  source: 'openlibrary' | 'semanticscholar' | 'tmdb'
+}
+
+export interface ArtifactsResponse {
+  query: string
+  books: ArtifactItem[]
+  papers: ArtifactItem[]
+  movies: ArtifactItem[]
+}
+
+export interface DeepDiveReport {
+  oneLiner: string
+  hook: string
+  genesis: string
+  trajectory: string
+  inflectionPoint: {
+    year: number | null
+    explanation: string
+  }
+  currentState: string
+  didYouKnow: string
+  phase: 'genesis' | 'rise' | 'peak' | 'consolidation' | 'decline'
+}
+
+export interface DeepDiveResponse {
+  report: DeepDiveReport
+  sources: SearchSources
+  artifacts: {
+    books: ArtifactItem[]
+    papers: ArtifactItem[]
+    movies: ArtifactItem[]
+  }
+}
