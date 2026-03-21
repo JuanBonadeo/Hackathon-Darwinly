@@ -58,13 +58,7 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
   const trajectoryS = useSimulatedStreaming(report?.trajectory,                  shouldAnimate && genesisS.isDone,    12, 110)
   const currentS    = useSimulatedStreaming(report?.currentState,                shouldAnimate && trajectoryS.isDone, 12, 110)
 
-  const hasInflection = !!report && report.inflectionPoint.year !== null
-  const inflectionS   = useSimulatedStreaming(
-    report?.inflectionPoint.explanation,
-    shouldAnimate && currentS.isDone && hasInflection,
-    10, 115,
-  )
-
+  const hasAnnotations  = !!report && (report.annotations?.length ?? 0) > 0
   // Display text — streamed when animating, direct from report when cached
   const hookText       = shouldAnimate ? hookS.displayedText       : (report?.hook ?? '')
   const oneLinerText   = shouldAnimate ? oneLinerS.displayedText   : (report?.oneLiner ?? '')
@@ -72,8 +66,6 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
   const genesisText    = shouldAnimate ? genesisS.displayedText    : (report?.genesis ?? '')
   const trajectoryText = shouldAnimate ? trajectoryS.displayedText : (report?.trajectory ?? '')
   const currentText    = shouldAnimate ? currentS.displayedText    : (report?.currentState ?? '')
-  const inflectionText = shouldAnimate ? inflectionS.displayedText : (report?.inflectionPoint.explanation ?? '')
-
   // Visibility gates — sequential when animating, all true immediately when cached
   const showOneLiner    = !shouldAnimate || hookS.isDone
   const showDyk         = !shouldAnimate || oneLinerS.isDone
@@ -82,8 +74,8 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
   const showTrajectory  = !shouldAnimate || showTimeline
   const showEvolution   = !shouldAnimate || trajectoryS.isDone
   const showCurrentState = !shouldAnimate || showEvolution
-  const showInflection  = !shouldAnimate || (hasInflection && currentS.isDone)
-  const showFooter      = !shouldAnimate || (hasInflection ? inflectionS.isDone : currentS.isDone)
+  const showAnnotations = !shouldAnimate || (hasAnnotations && currentS.isDone)
+  const showFooter      = !shouldAnimate || currentS.isDone
 
   // Staggered delay for cached results (elements mount simultaneously)
   const d = (n: number) =>
@@ -183,8 +175,7 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 my-8" style={d(4)}>
                 <DarwinlyTimeline
                   data={data}
-                  inflectionYear={deepDive.report.inflectionPoint.year}
-                  inflectionExplanation={deepDive.report.inflectionPoint.explanation}
+                  annotations={deepDive.report.annotations}
                 />
               </div>
             )}
@@ -209,27 +200,9 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
               </div>
             )}
 
-            {/* Current State */}
-            {showCurrentState && (
-              <p className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-base leading-relaxed" style={d(7)}>
-                {currentText}
-              </p>
-            )}
-
-            {/* Inflection footnote */}
-            {showInflection && hasInflection && (
-              <div className="animate-in fade-in duration-500 border-t border-border pt-4 mt-6" style={d(8)}>
-                <p className="text-sm text-muted-foreground">
-                  <span className="font-semibold">Inflection point:</span>{' '}
-                  {deepDive.report.inflectionPoint.year} —{' '}
-                  {inflectionText}
-                </p>
-              </div>
-            )}
-
             {/* Data sources — appears after all text is done */}
             {showFooter && (
-              <div className="animate-in fade-in duration-500 border-t border-border pt-5 mt-2" style={d(9)}>
+              <div className="animate-in fade-in duration-500 border-b border-border pb-5 mb-2" style={d(9)}>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">
                   Data sources
                 </p>
@@ -248,6 +221,19 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
                 </div>
               </div>
             )}
+
+            {/* Current State */}
+            {showCurrentState && (
+              <div className="animate-in fade-in slide-in-from-bottom-3 duration-600 border-l-4 border-blue-500 bg-blue-500/10 pl-4 py-3" style={d(7)}>
+                <p className="text-sm flex items-start gap-2">
+                  <span className="text-base shrink-0"></span>
+                  <span className="leading-relaxed">{currentText}</span>
+                </p>
+              </div>
+            )}
+
+            
+
 
           </CardContent>
         </Card>

@@ -21,6 +21,7 @@ import {
   ChartTooltip,
   type ChartConfig,
 } from '@/components/ui/chart'
+import type { TimelineAnnotation } from '@/types/strata'
 
 type SourceKey = 'wikipedia' | 'books' | 'papers' | 'movies' | 'news'
 
@@ -36,13 +37,24 @@ interface TimelineData {
 
 interface DarwinlyTimelineProps {
   data: TimelineData
-  inflectionYear?: number | null
-  inflectionExplanation?: string | null
+  annotations?: TimelineAnnotation[]
 }
 
 interface TimelineChartPoint {
   year: number
   wikipedia: number
+}
+
+const ANNOTATION_COLORS: Record<TimelineAnnotation['type'], string> = {
+  inflection: '#1D4ED8',
+  peak: '#3B82F6',
+  milestone: '#60A5FA',
+}
+
+const ANNOTATION_LABELS: Record<TimelineAnnotation['type'], string> = {
+  inflection: 'Inflection',
+  peak: 'Peak',
+  milestone: 'Milestone',
 }
 
 const chartConfig = {
@@ -58,7 +70,7 @@ function formatAxisValue(value: number): string {
   return value.toString()
 }
 
-export function DarwinlyTimeline({ data, inflectionYear = null, inflectionExplanation = null }: DarwinlyTimelineProps) {
+export function DarwinlyTimeline({ data, annotations = [] }: DarwinlyTimelineProps) {
   const wikipediaSeries = useMemo(
     () => [...(data.sources.wikipedia ?? [])].sort((a, b) => a.year - b.year),
     [data.sources.wikipedia]
@@ -69,23 +81,22 @@ export function DarwinlyTimeline({ data, inflectionYear = null, inflectionExplan
     [wikipediaSeries]
   )
 
-  const peakYears = useMemo(() => {
-    const counts = wikipediaSeries.map((item) => item.count)
-    if (counts.length === 0) return new Set<number>()
+  const annotationMap = useMemo(
+    () => new Map(annotations.map((a) => [a.year, a])),
+    [annotations]
+  )
 
-    const mean = counts.reduce((acc, v) => acc + v, 0) / counts.length
-    const variance = counts.reduce((acc, v) => acc + (v - mean) ** 2, 0) / counts.length
-    const threshold = mean + 1.2 * Math.sqrt(variance)
-
-    return new Set<number>(
-      wikipediaSeries.filter((item) => item.count > threshold).map((item) => item.year)
-    )
-  }, [wikipediaSeries])
+  const hasAnnotations = annotations.length > 0
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-2xl sm:text-3xl">Timeline</CardTitle>
+        {hasAnnotations && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Hover on marked years to see what happened
+          </p>
+        )}
       </CardHeader>
       <CardContent className="pt-4">
         <ChartContainer config={chartConfig} className="h-80 w-full">
@@ -106,14 +117,11 @@ export function DarwinlyTimeline({ data, inflectionYear = null, inflectionExplan
             <ChartTooltip
               content={({ active, payload, label }) => {
                 if (!active || !payload?.length) return null
-                const isInflection = Number(label) === inflectionYear
+                const annotation = annotationMap.get(Number(label))
 
                 return (
                   <div className="bg-popover border rounded-lg shadow-lg p-3 max-w-xs">
-                    <p className="font-semibold text-sm mb-2 flex items-center gap-2">
-                      {isInflection && <span>📍</span>}
-                      Year: {label}
-                    </p>
+                    <p className="font-semibold text-sm mb-2">Year: {label}</p>
 
                     {payload.map((entry) => (
                       <div key={entry.dataKey as string} className="text-xs flex justify-between gap-4 mb-1">
@@ -122,11 +130,16 @@ export function DarwinlyTimeline({ data, inflectionYear = null, inflectionExplan
                       </div>
                     ))}
 
-                    {isInflection && inflectionExplanation && (
+                    {annotation && (
                       <div className="mt-3 pt-2 border-t">
-                        <p className="text-xs text-yellow-400 font-semibold mb-1">Inflection Point</p>
+                        <p
+                          className="text-xs font-semibold mb-1"
+                          style={{ color: ANNOTATION_COLORS[annotation.type] }}
+                        >
+                          {ANNOTATION_LABELS[annotation.type]}
+                        </p>
                         <p className="text-xs text-muted-foreground leading-relaxed">
-                          {inflectionExplanation}
+                          {annotation.explanation}
                         </p>
                       </div>
                     )}
@@ -135,16 +148,22 @@ export function DarwinlyTimeline({ data, inflectionYear = null, inflectionExplan
               }}
             />
 
-            {inflectionYear !== null && (
+            {annotations.slice(0, 3).map((annotation) => (
               <ReferenceLine
-                x={inflectionYear}
-                stroke="#fbbf24"
+                key={annotation.year}
+                x={annotation.year}
+                stroke={ANNOTATION_COLORS[annotation.type]}
                 strokeDasharray="5 3"
                 strokeWidth={2}
                 ifOverflow="extendDomain"
-                label={{ value: '📍', position: 'top', fontSize: 20, fill: '#fbbf24' }}
+                label={{
+                  value: ANNOTATION_LABELS[annotation.type],
+                  position: 'top',
+                  fontSize: 10,
+                  fill: ANNOTATION_COLORS[annotation.type],
+                }}
               />
-            )}
+            ))}
 
             <Line
               type="monotone"
@@ -155,24 +174,29 @@ export function DarwinlyTimeline({ data, inflectionYear = null, inflectionExplan
               dot={(props) => {
                 const { key, ...dotProps } = props
                 const year = Number(props.payload?.year)
-                if (!peakYears.has(year)) {
+                const annotation = annotationMap.get(year)
+
+                if (annotation) {
+                  const color = ANNOTATION_COLORS[annotation.type]
                   return (
                     <Dot
                       key={String(key)}
                       {...dotProps}
-                      r={2}
-                      fill="transparent"
-                      stroke="transparent"
+                      r={6}
+                      fill={color}
+                      stroke="#ffffff"
+                      strokeWidth={2}
                     />
                   )
                 }
+
                 return (
                   <Dot
                     key={String(key)}
                     {...dotProps}
-                    r={6}
-                    fill="#ffd166"
-                    stroke="#ffd166"
+                    r={2}
+                    fill="transparent"
+                    stroke="transparent"
                   />
                 )
               }}
