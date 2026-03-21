@@ -14,7 +14,7 @@ import { normalizeQuery, validateNormalizedQuery } from "@/app/actions/search";
 import { fetchWorldBankMacro, type WorldBankMacro } from "@/lib/apis/worldbank";
 import { fetchGitHubData, type GitHubData } from "@/lib/apis/github";
 import { detectGitHubRepo } from "./is-tech-query";
-import { isCryptoQuery } from "./is-crypto-query";
+
 import { fetchCryptoData, type CryptoData } from "@/lib/apis/coinmarketcap";
 import type { Artifact, TimelineAnnotation, YearlyDataPoint, YearlySeries } from "@/types/strata";
 
@@ -229,11 +229,8 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
   const cacheQuery = normalizedQuery.toLowerCase();
   const ENDPOINT = "deep-dive-full";
 
-  const [githubRepo, isCrypto] = await Promise.all([
-    detectGitHubRepo(cacheQuery),
-    isCryptoQuery(cacheQuery),
-  ]);
-  console.log("[DeepDive] Detection", { query: cacheQuery, githubRepo, isCrypto });
+  const githubRepo = await detectGitHubRepo(cacheQuery);
+  console.log("[DeepDive] Detection", { query: cacheQuery, githubRepo });
 
   let userId: string | null = null;
   try {
@@ -274,7 +271,7 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
 
     // Hydrate crypto data if missing from cache
     let crypto = cached.crypto;
-    if (crypto === undefined && isCrypto) {
+    if (crypto === undefined) {
       console.log("[DeepDive] Hydrating missing crypto data for cached response");
       crypto = await fetchCryptoData(cacheQuery);
     }
@@ -342,12 +339,12 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
       withTimeout(fetchArtifactPapers(cacheQuery, yearStart, yearEnd), 45_000, []),
       withTimeout(fetchArtifactMovies(cacheQuery, yearStart, yearEnd), 10_000, []),
       withTimeout(
-        fetchGitHubData(cacheQuery, githubRepo),
+        githubRepo ? fetchGitHubData(cacheQuery, githubRepo) : Promise.resolve(null),
         15_000,
         null,
       ),
       withTimeout(
-        isCrypto ? fetchCryptoData(cacheQuery) : Promise.resolve(null),
+        fetchCryptoData(cacheQuery),
         10_000,
         null,
       ),
@@ -420,11 +417,11 @@ If the query is a technology, focus on adoption narratives and hype cycles, not 
 {
   "oneLiner": "Ultra-compressed summary (max 70 chars). Use concrete descriptors, not abstractions.",
 
-  "hook": "1 punchy sentence (max 120 chars). A provocation or surprising fact — not a definition.",
+  "hook": "1 punchy sentence (max 120 chars). A provocation that reframes this concept — insight over facts, challenge assumptions.",
 
   "genesis": "1-2 sentences (max 200 chars). When/how '${normalizedQuery}' emerged as a recognizable concept. Name the originating figure, work, or event if known.",
 
-  "trajectory": "3-4 sentences (max 300 chars). Trace evolution citing at least 2 data trends. Explain causality: 'X happened because...' not 'X happened and then...'",
+  "trajectory": "3-4 sentences (max 350 chars). Trace evolution citing at least 2 data trends. Explain causality: 'X happened because...' not 'X happened and then...'",
 
   "inflectionPoint": {
     "year": number | null,  // null if no clear pivot

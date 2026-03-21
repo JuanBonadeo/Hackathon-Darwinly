@@ -95,11 +95,10 @@ export function DarwinlyTimeline({ data, annotations = [] }: DarwinlyTimelinePro
     <Card>
       <CardHeader>
         <CardTitle className="text-2xl sm:text-3xl">Timeline</CardTitle>
-        {hasAnnotations && (
-          <p className="text-xs text-muted-foreground mt-1">
-            Hover on marked years to see what happened
-          </p>
-        )}
+        <p className="text-xs text-muted-foreground mt-1">
+          Wikipedia pageviews per year — public interest over time
+          {hasAnnotations && ". Hover on marked years to see what happened"}
+        </p>
       </CardHeader>
       <CardContent className="pt-4">
         <ChartContainer config={chartConfig} className="h-80 w-full">
@@ -126,12 +125,6 @@ export function DarwinlyTimeline({ data, annotations = [] }: DarwinlyTimelinePro
                   <div className="bg-popover border rounded-lg shadow-lg p-3 max-w-xs">
                     <p className="font-semibold text-sm mb-2">Year: {label}</p>
 
-                    {payload.map((entry) => (
-                      <div key={entry.dataKey as string} className="text-xs flex justify-between gap-4 mb-1">
-                        <span style={{ color: entry.color as string }}>{entry.name}:</span>
-                        <span className="font-medium">{formatAxisValue(Number(entry.value))}</span>
-                      </div>
-                    ))}
 
                     {annotation && (
                       <div className="mt-3 pt-2 border-t">
