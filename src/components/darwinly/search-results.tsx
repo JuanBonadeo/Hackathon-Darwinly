@@ -98,7 +98,7 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
           variant="outline"
           size="lg"
           onClick={onBack}
-          className="h-11 min-w-[168px] px-5 gap-2 shrink-0 rounded-full bg-card/60 hover:bg-card cursor-pointer"
+          className="h-11 min-w-42 px-5 gap-2 shrink-0 rounded-full bg-card/60 hover:bg-card cursor-pointer"
           aria-label="Back to Home"
           title="Back to Home"
         >
@@ -126,7 +126,7 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
             barSize={8}
             autoRotate={true}
             rotateSpeed={4}
-            zScaleMode="source_relative"
+            zScaleMode="source_log_relative"
           />
 
           <Card className="w-full">
@@ -249,7 +249,7 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
           <CardContent className="flex justify-center items-center h-96">
             <div className="text-center space-y-4">
               <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-              <p className="text-muted-foreground">Searching for "{query}"...</p>
+              <p className="text-muted-foreground">Searching for {query}...</p>
             </div>
           </CardContent>
         </Card>
