@@ -108,7 +108,7 @@ export function Sidebar({
       {/* Desktop sidebar */}
       <aside
         className="hidden lg:flex fixed left-0 top-0 h-screen flex-col border-r border-sidebar-border bg-sidebar will-change-[width] transition-[width] duration-500 ease-out"
-        style={{ width: isDesktopExpanded ? "260px" : "120px" }}
+        style={{ width: isDesktopExpanded ? "220px" : "85px" }}
         onMouseEnter={handleDesktopEnter}
         onMouseLeave={handleDesktopLeave}
         onFocusCapture={handleDesktopEnter}
@@ -172,7 +172,7 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className={`${isCollapsed ? "p-2" : "p-4 pb-3"}`}>
+      <div className={`${isCollapsed ? "p-1" : "p-1 pb-3"}`}>
         <Link
           href="/"
           onClick={onLogoClick}
@@ -285,19 +285,19 @@ function SidebarContent({
           </div>
 
           {/* Auth Buttons */}
-          <div className="mt-auto p-4 space-y-2">
+          <div className="mt-auto p-1 space-y-2">
             <Button
               variant="outline"
               className="w-full justify-start gap-2 border-border bg-transparent hover:bg-sidebar-accent"
             >
-              <LogIn className="h-5 w-5" />
+              <LogIn className="h-14 w-14" />
               Log in
             </Button>
             <Button
               variant="outline"
               className="w-full justify-start gap-2 border-border bg-transparent hover:bg-sidebar-accent"
             >
-              <UserPlus className="h-5 w-5" />
+              <UserPlus className="h-14 w-14" />
               Sign up
             </Button>
           </div>
@@ -310,7 +310,7 @@ function SidebarContent({
             className="h-11 w-11 border-border bg-transparent hover:bg-sidebar-accent"
             title="Sign in"
           >
-            <LogIn className="h-5 w-5" />
+            <LogIn className="h-14 w-14" />
             <span className="sr-only">Sign in</span>
           </Button>
         </div>
