@@ -7,7 +7,9 @@ __v0_jsx-dev-runtime.ts
 .vercel/
 next.user-config.*
 
+# Env files
 .env
+!.env.example
 
 # Common ignores
 node_modules/
