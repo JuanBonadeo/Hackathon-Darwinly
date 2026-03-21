@@ -4,7 +4,7 @@ export function useSimulatedStreaming(
   text: string | undefined,
   enabled: boolean,
   charsPerTick = 15,
-  tickMs = 80,
+  tickMs = 120,
 ) {
   const [displayedText, setDisplayedText] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
