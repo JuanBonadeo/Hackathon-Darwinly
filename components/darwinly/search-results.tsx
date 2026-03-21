@@ -1,8 +1,10 @@
 ﻿'use client'
 
 import { useEffect } from 'react'
+import Link from 'next/link'
 import { useSearchData } from '@/hooks/use-search-data'
 import { Darwinly3DChartWrapper } from './darwinly-3d-chart-wrapper'
+import { DarwinlyTimeline } from './DarwinlyTimeline'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertCircle, Loader2, ArrowLeft } from 'lucide-react'
@@ -50,14 +52,11 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
     <div className="w-full max-w-7xl mx-auto px-4 py-8 space-y-6">
       {/* Back Button and Title */}
       <div className="flex items-center gap-4 mb-8">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={onBack}
-          className="gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Home
+        <Button variant="ghost" size="sm" asChild className="gap-2">
+          <Link href="/" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4" />
+            Back to Home
+          </Link>
         </Button>
         <h1 className="text-2xl sm:text-3xl font-bold">{query}</h1>
       </div>
@@ -73,6 +72,8 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
       {/* Charts */}
       {data && !loading && (
         <>
+          <DarwinlyTimeline data={data} />
+
           <Darwinly3DChartWrapper 
             data={data}
             barSize={8}

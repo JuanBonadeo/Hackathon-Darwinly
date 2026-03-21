@@ -26,7 +26,7 @@ export function Navbar({ isDesktopSidebarExpanded }: NavbarProps) {
         "fixed top-0 right-0 left-0 z-40 transition-all duration-300 lg:left-[120px]",
         isDesktopSidebarExpanded && "lg:left-[260px]",
         scrolled 
-          ? "bg-background/80 backdrop-blur-md border-b border-border" 
+          ? "bg-background/80 backdrop-blur-md" 
           : "bg-transparent"
       )}
     >

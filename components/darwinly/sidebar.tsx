@@ -12,7 +12,8 @@ import {
   Layers,
   Lightbulb,
   Users,
-  CreditCard
+  CreditCard,
+  Trash2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -21,6 +22,8 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 interface SidebarProps {
   searchHistory: string[]
   onSearchHistoryClick: (term: string) => void
+  onDeleteSearchHistory: (term: string) => void
+  onLogoClick: () => void
   isDesktopExpanded: boolean
   onDesktopExpandedChange: (expanded: boolean) => void
 }
@@ -35,6 +38,8 @@ const navLinks = [
 export function Sidebar({
   searchHistory,
   onSearchHistoryClick,
+  onDeleteSearchHistory,
+  onLogoClick,
   isDesktopExpanded,
   onDesktopExpandedChange,
 }: SidebarProps) {
@@ -90,6 +95,11 @@ export function Sidebar({
               onSearchHistoryClick(term)
               setIsOpen(false)
             }}
+            onDeleteSearchHistory={onDeleteSearchHistory}
+            onLogoClick={() => {
+              onLogoClick()
+              setIsOpen(false)
+            }}
           />
         </SheetContent>
       </Sheet>
@@ -110,6 +120,8 @@ export function Sidebar({
         <SidebarContent 
           searchHistory={searchHistory} 
           onSearchHistoryClick={onSearchHistoryClick}
+          onDeleteSearchHistory={onDeleteSearchHistory}
+          onLogoClick={onLogoClick}
           isCollapsed={!isDesktopExpanded}
         />
       </aside>
@@ -120,44 +132,66 @@ export function Sidebar({
 function SidebarContent({ 
   searchHistory, 
   onSearchHistoryClick,
+  onDeleteSearchHistory,
+  onLogoClick,
   isCollapsed = false,
 }: { 
   searchHistory: string[]
   onSearchHistoryClick: (term: string) => void 
+  onDeleteSearchHistory: (term: string) => void
+  onLogoClick: () => void
   isCollapsed?: boolean
 }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme !== "light"
+  const recentSearches = [...searchHistory].reverse()
 
   return (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="p-4 pb-3">
-        <Link href="/" className="flex items-center min-w-0">
-          <div className="relative h-24 w-full lg:h-28">
+      <div className={`${isCollapsed ? "p-2" : "p-4 pb-3"}`}>
+        <Link
+          href="/"
+          onClick={onLogoClick}
+          className={`flex min-w-0 ${isCollapsed ? "w-fit justify-center mx-auto" : "w-full items-center"}`}
+        >
+          <div className={`relative h-24 ${isCollapsed ? "w-20" : "w-full"} lg:h-28`}>
             <div
-              className={`absolute inset-0 flex items-center transition-all duration-300 ease-out ${
+              className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ease-out ${
                 isCollapsed ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-1"
               }`}
             >
-              <span className="flex h-24 w-24 items-center justify-center rounded-2xl bg-sidebar-accent p-2">
-                <Image src="/logo.svg" alt="Darwinly" width={88} height={88} className="h-auto w-auto object-contain" />
+              <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-sidebar-accent ">
+                <Image
+                  src="/logo.svg"
+                  alt="Darwinly"
+                  width={56}
+                  height={56}
+                  className="h-14 w-14 shrink-0 object-contain"
+                  priority
+                />
               </span>
             </div>
 
             <div
-              className={`absolute inset-0 flex items-center transition-all duration-300 ease-out ${
+              className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ease-out ${
                 isCollapsed ? "opacity-0 translate-x-1" : "opacity-100 translate-x-0"
               }`}
             >
-              <Image
-                src={isDark ? "/logoDarwin.svg" : "/logoDarwinClaro.svg"}
-                alt="Darwinly"
-                width={380}
-                height={92}
-                className="h-auto w-auto max-w-[220px] object-contain lg:max-w-[228px]"
-                priority
-              />
+              <span className="flex items-center gap-3 rounded-2xl bg-sidebar-accent px-3 py-2.5">
+                <Image
+                  src="/logo.svg"
+                  alt="Darwinly"
+                  width={44}
+                  height={44}
+                  className="h-11 w-11 shrink-0 object-contain"
+                  priority
+                />
+                <span className="text-xl font-semibold leading-none tracking-tight">
+                  <span className={isDark ? "text-white" : "text-black"}>Darwin</span>
+                  <span className="text-zinc-500">ly</span>
+                </span>
+              </span>
             </div>
           </div>
         </Link>
@@ -166,7 +200,7 @@ function SidebarContent({
       {!isCollapsed ? (
         <>
           {/* Navigation */}
-          <nav className="px-4 pb-6">
+          <nav className="px-1 pb-3">
             <ul className="space-y-1">
               {navLinks.map((link) => (
                 <li key={link.href}>
@@ -174,7 +208,7 @@ function SidebarContent({
                     href={link.href}
                     className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
                   >
-                    <link.icon className="h-4 w-4" />
+                    <link.icon className="h-5 w-5" />
                     {link.label}
                   </Link>
                 </li>
@@ -183,22 +217,38 @@ function SidebarContent({
           </nav>
 
           {/* Search History */}
-          <div className="flex-1 px-4">
+          <div className="flex-1 min-h-0 px-4 pb-4">
             <div className="flex items-center gap-2 px-3 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              <Clock className="h-3 w-3" />
+              <Clock className="h-4 w-4" />
               Recent searches
             </div>
-            <ScrollArea className="h-[200px]">
-              {searchHistory.length > 0 ? (
-                <ul className="space-y-1">
-                  {searchHistory.map((term, index) => (
+            <ScrollArea className="h-full pr-1">
+              {recentSearches.length > 0 ? (
+                <ul className="space-y-1 pb-2">
+                  {recentSearches.map((term, index) => (
                     <li key={`${term}-${index}`}>
-                      <button
-                        onClick={() => onSearchHistoryClick(term)}
-                        className="w-full text-left rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground truncate"
-                      >
-                        {term}
-                      </button>
+                      <div className="group flex items-center gap-1 rounded-lg px-1 py-1 transition-colors hover:bg-sidebar-accent">
+                        <button
+                          onClick={() => onSearchHistoryClick(term)}
+                          className="min-w-0 flex-1 text-left rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground truncate"
+                        >
+                          {term}
+                        </button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 shrink-0 text-muted-foreground opacity-70 transition-opacity hover:opacity-100"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            onDeleteSearchHistory(term)
+                          }}
+                          aria-label={`Delete search ${term}`}
+                          title="Delete search"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -216,14 +266,14 @@ function SidebarContent({
               variant="outline"
               className="w-full justify-start gap-2 border-border bg-transparent hover:bg-sidebar-accent"
             >
-              <LogIn className="h-4 w-4" />
+              <LogIn className="h-5 w-5" />
               Log in
             </Button>
             <Button
               variant="outline"
               className="w-full justify-start gap-2 border-border bg-transparent hover:bg-sidebar-accent"
             >
-              <UserPlus className="h-4 w-4" />
+              <UserPlus className="h-5 w-5" />
               Sign up
             </Button>
           </div>
@@ -233,10 +283,10 @@ function SidebarContent({
           <Button
             variant="outline"
             size="icon"
-            className="h-10 w-10 border-border bg-transparent hover:bg-sidebar-accent"
+            className="h-11 w-11 border-border bg-transparent hover:bg-sidebar-accent"
             title="Sign in"
           >
-            <LogIn className="h-4 w-4" />
+            <LogIn className="h-5 w-5" />
             <span className="sr-only">Sign in</span>
           </Button>
         </div>

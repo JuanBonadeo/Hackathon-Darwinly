@@ -150,6 +150,32 @@ function getColorBySourceIndex(sourceIndex) {
   return colors[sourceIndex] || '#999999'
 }
 
+function blendHexColor(hexColor, targetHex, ratio) {
+  const safeRatio = Math.max(0, Math.min(1, ratio))
+  const hex = hexColor.replace('#', '')
+  const target = targetHex.replace('#', '')
+
+  if (hex.length !== 6 || target.length !== 6) {
+    return hexColor
+  }
+
+  const r = Math.round(parseInt(hex.slice(0, 2), 16) * (1 - safeRatio) + parseInt(target.slice(0, 2), 16) * safeRatio)
+  const g = Math.round(parseInt(hex.slice(2, 4), 16) * (1 - safeRatio) + parseInt(target.slice(2, 4), 16) * safeRatio)
+  const b = Math.round(parseInt(hex.slice(4, 6), 16) * (1 - safeRatio) + parseInt(target.slice(4, 6), 16) * safeRatio)
+
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+}
+
+function getBarBorderColor(sourceIndex, state = 'normal') {
+  const baseColor = getColorBySourceIndex(sourceIndex)
+
+  if (state === 'emphasis') {
+    return blendHexColor(baseColor, '#ffffff', 0.25)
+  }
+
+  return blendHexColor(baseColor, '#000000', 0.4)
+}
+
 export default class Darwinly3DChart {
   constructor(containerId, data, options = {}) {
     this.containerId = containerId
@@ -383,8 +409,11 @@ export default class Darwinly3DChart {
           },
           itemStyle: {
             opacity: 1,
-            borderWidth: 1.5,
-            borderColor: 'rgba(255, 255, 255, 0.7)',
+            borderWidth: 2.2,
+            borderColor: (params) => {
+              const sourceIndex = params.data[3]
+              return getBarBorderColor(sourceIndex, 'normal')
+            },
             color: (params) => {
               const sourceIndex = params.data[3]
               return getColorBySourceIndex(sourceIndex)
@@ -393,8 +422,11 @@ export default class Darwinly3DChart {
           emphasis: {
             itemStyle: {
               opacity: 1,
-              borderWidth: 2,
-              borderColor: 'rgba(255, 255, 255, 0.95)',
+              borderWidth: 2.8,
+              borderColor: (params) => {
+                const sourceIndex = params.data[3]
+                return getBarBorderColor(sourceIndex, 'emphasis')
+              },
               color: (params) => {
                 const sourceIndex = params.data[3]
                 return getColorBySourceIndex(sourceIndex)

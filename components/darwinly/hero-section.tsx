@@ -34,22 +34,22 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
 
       <div 
         className={cn(
-          "max-w-3xl mx-auto text-center transition-all duration-700 ease-out",
+          "max-w-3xl text-left transition-all duration-700 ease-out",
           isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
         )}
       >
         {/* Headline */}
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight text-balance max-w-[700px] mx-auto">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
           See how any idea evolved across human knowledge.
         </h1>
 
         {/* Subheadline */}
-        <p className="mt-5 text-lg sm:text-xl text-muted-foreground max-w-[600px] mx-auto text-balance">
+        <p className="mt-5 text-lg sm:text-xl text-muted-foreground">
           Cross-reference books, science, news, movies, and public interest to reveal the full timeline of any concept — powered by AI.
         </p>
 
         {/* Search Bar */}
-        <form onSubmit={handleSubmit} className="mt-8 max-w-[560px] mx-auto">
+        <form onSubmit={handleSubmit} className="mt-8 w-full">
           <div className="relative">
             <input
               ref={inputRef}

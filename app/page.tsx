@@ -56,6 +56,11 @@ export default function HomePage() {
     handleSearch(term)
   }
 
+  const handleDeleteSearchHistory = (term: string) => {
+    const newHistory = searchHistory.filter((item) => item !== term)
+    saveHistory(newHistory)
+  }
+
     const handleBackToHome = () => {
       setActiveQuery(null)
     }
@@ -70,6 +75,8 @@ export default function HomePage() {
       <Sidebar 
         searchHistory={searchHistory} 
         onSearchHistoryClick={handleSearchHistoryClick}
+        onDeleteSearchHistory={handleDeleteSearchHistory}
+        onLogoClick={handleBackToHome}
         isDesktopExpanded={isDesktopSidebarExpanded}
         onDesktopExpandedChange={setIsDesktopSidebarExpanded}
       />
