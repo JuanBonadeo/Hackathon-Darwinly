@@ -24,7 +24,7 @@ export default function SignUpPage() {
         name,
         email,
         password,
-        callbackURL: "/dashboard",
+        callbackURL: "/",
       });
 
       if (result.error) {
@@ -32,7 +32,7 @@ export default function SignUpPage() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push("/");
       router.refresh();
     });
   }
@@ -43,7 +43,7 @@ export default function SignUpPage() {
     startTransition(async () => {
       const result = await signIn.social({
         provider: "google",
-        callbackURL: "/dashboard",
+        callbackURL: "/",
       });
 
       if (result?.error) {

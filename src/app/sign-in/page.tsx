@@ -22,7 +22,7 @@ export default function SignInPage() {
       const result = await signIn.email({
         email,
         password,
-        callbackURL: "/dashboard",
+        callbackURL: "/",
       });
 
       if (result.error) {
@@ -30,7 +30,7 @@ export default function SignInPage() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push("/");
       router.refresh();
     });
   }
@@ -41,7 +41,7 @@ export default function SignInPage() {
     startTransition(async () => {
       const result = await signIn.social({
         provider: "google",
-        callbackURL: "/dashboard",
+        callbackURL: "/",
       });
 
       if (result?.error) {

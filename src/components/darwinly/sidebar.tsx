@@ -3,11 +3,16 @@
 import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { 
+  BarChart3,
   Clock, 
+  Heart,
   LogIn, 
+  LogOut,
   UserPlus, 
+  User,
   Menu,
   Layers,
   Lightbulb,
@@ -16,8 +21,16 @@ import {
   Trash2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
+import { signOut, useSession } from "@/lib/auth-client"
 
 interface SidebarProps {
   searchHistory: string[]
@@ -44,6 +57,7 @@ export function Sidebar({
   onDesktopExpandedChange,
 }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const collapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -67,10 +81,23 @@ export function Sidebar({
   }
 
   const handleDesktopLeave = () => {
+    if (isProfileMenuOpen) {
+      return
+    }
+
     clearCollapseTimer()
     collapseTimerRef.current = setTimeout(() => {
       onDesktopExpandedChange(false)
     }, 140)
+  }
+
+  const handleProfileMenuOpenChange = (open: boolean) => {
+    setIsProfileMenuOpen(open)
+
+    if (open) {
+      clearCollapseTimer()
+      onDesktopExpandedChange(true)
+    }
   }
 
   return (
@@ -124,6 +151,7 @@ export function Sidebar({
           onDeleteSearchHistory={onDeleteSearchHistory}
           onLogoClick={onLogoClick}
           isCollapsed={!isDesktopExpanded}
+          onProfileMenuOpenChange={handleProfileMenuOpenChange}
         />
       </aside>
     </>
@@ -137,6 +165,7 @@ function SidebarContent({
   onLogoClick,
   onNavLinkClick,
   isCollapsed = false,
+  onProfileMenuOpenChange,
 }: { 
   searchHistory: string[]
   onSearchHistoryClick: (term: string) => void 
@@ -144,10 +173,27 @@ function SidebarContent({
   onLogoClick: () => void
   onNavLinkClick?: () => void
   isCollapsed?: boolean
+  onProfileMenuOpenChange?: (open: boolean) => void
 }) {
   const { resolvedTheme } = useTheme()
+  const router = useRouter()
+  const { data: session } = useSession()
   const isDark = resolvedTheme !== "light"
   const recentSearches = [...searchHistory].reverse()
+  const user = session?.user
+  const userInitials =
+    user?.name
+      ?.split(" ")
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() ?? "U"
+
+  const handleLogout = async () => {
+    await signOut()
+    router.push("/")
+    router.refresh()
+  }
 
   const handleNavClick = (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (!href.startsWith("#")) {
@@ -286,42 +332,113 @@ function SidebarContent({
 
           {/* Auth Buttons */}
           <div className="mt-auto p-1 space-y-2">
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-2 border-border bg-transparent hover:bg-sidebar-accent"
-              asChild
-            >
-              <Link href="/sign-in">
-                <LogIn className="h-4 w-4" />
-                Log in
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-2 border-border bg-transparent hover:bg-sidebar-accent"
-              asChild
-            >
-              <Link href="/sign-up">
-                <UserPlus className="h-4 w-4" />
-                Sign up
-              </Link>
-            </Button>
+            {user ? (
+              <DropdownMenu onOpenChange={onProfileMenuOpenChange}>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-3 rounded-lg border border-border bg-transparent px-3 py-2 text-left transition-colors hover:bg-sidebar-accent"
+                  >
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={user.image ?? undefined} alt={user.name ?? "Logged in user"} />
+                      <AvatarFallback>{userInitials}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {user.name ?? "Signed in"}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="right" align="end" sideOffset={10} className="w-56">
+                  <DropdownMenuItem onSelect={() => router.push("/usage") }>
+                    <BarChart3 className="h-4 w-4" />
+                    Usage
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => router.push("/favoritos") }>
+                    <Heart className="h-4 w-4" />
+                    Starred
+                  </DropdownMenuItem>
+                  <DropdownMenuItem variant="destructive" onSelect={handleLogout}>
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2 border-border bg-transparent hover:bg-sidebar-accent"
+                  asChild
+                >
+                  <Link href="/sign-in">
+                    <LogIn className="h-4 w-4" />
+                    Log in
+                  </Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2 border-border bg-transparent hover:bg-sidebar-accent"
+                  asChild
+                >
+                  <Link href="/sign-up">
+                    <UserPlus className="h-4 w-4" />
+                    Sign up
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
         </>
       ) : (
         <div className="mt-auto flex justify-center px-3 pb-4">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-11 w-11 border-border bg-transparent hover:bg-sidebar-accent"
-            title="Sign in"
-            asChild
-          >
-            <Link href="/sign-in">
-              <LogIn className="h-4 w-4" />
-              <span className="sr-only">Sign in</span>
-            </Link>
-          </Button>
+          {user ? (
+            <DropdownMenu onOpenChange={onProfileMenuOpenChange}>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-transparent transition-colors hover:bg-sidebar-accent"
+                  title={user.name ?? "Signed in user"}
+                >
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src={user.image ?? undefined} alt={user.name ?? "Logged in user"} />
+                    <AvatarFallback>
+                      <User className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" align="end" sideOffset={10} className="w-56">
+                <DropdownMenuItem onSelect={() => router.push("/usage") }>
+                  <BarChart3 className="h-4 w-4" />
+                  Usage
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => router.push("/favoritos") }>
+                  <Heart className="h-4 w-4" />
+                  Starred
+                </DropdownMenuItem>
+                <DropdownMenuItem variant="destructive" onSelect={handleLogout}>
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-11 w-11 border-border bg-transparent hover:bg-sidebar-accent"
+              title="Sign in"
+              asChild
+            >
+              <Link href="/sign-in">
+                <LogIn className="h-4 w-4" />
+                <span className="sr-only">Sign in</span>
+              </Link>
+            </Button>
+          )}
         </div>
       )}
     </div>
