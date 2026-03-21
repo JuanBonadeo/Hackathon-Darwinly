@@ -9,21 +9,24 @@ import { fetchTmdbYearly } from "@/lib/apis/tmdb";
 import { fetchWikipediaYearly } from "@/lib/apis/wikipedia";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { fetchWorldBankMacro } from "@/lib/apis/worldbank";
+import type { WorldBankMacro } from "@/lib/apis/worldbank";
 import type { YearlySeries } from "@/types/strata";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface DeepDiveReport {
-  origin: string;
-  timeline: string;
-  peakDecade: string;
-  firstMover: string;
-  keyArtifacts: {
-    books: string[];
-    papers: string[];
-    movies: string[];
+  oneLiner: string;
+  hook: string;
+  genesis: string;
+  trajectory: string;
+  inflectionPoint: {
+    year: number | null;
+    explanation: string;
   };
-  unexpectedInsight: string;
+  currentState: string;
+  didYouKnow: string;
+  phase: "genesis" | "rise" | "peak" | "consolidation" | "decline";
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -39,6 +42,23 @@ function unavailable(id: string, error: string): YearlySeries {
 function currentEndDate(): string {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function summarizeMacro(macro: WorldBankMacro): string {
+  const fmt = (s: { label: string; unit: string; data: { year: number; value: number }[] }) => {
+    if (s.data.length === 0) return `${s.label}: no data`;
+    const first = s.data[0];
+    const last = s.data[s.data.length - 1];
+    const peak = s.data.reduce((a, b) => (b.value > a.value ? b : a));
+    const delta = last.value - first.value;
+    const sign = delta >= 0 ? "+" : "";
+    return (
+      `${s.label} (${s.unit}): ` +
+      `${first.year}=${first.value.toFixed(1)}, ${last.year}=${last.value.toFixed(1)} ` +
+      `(${sign}${delta.toFixed(1)} since ${first.year}; peak ${peak.year}=${peak.value.toFixed(1)})`
+    );
+  };
+  return [fmt(macro.internet), fmt(macro.gdpGrowth), fmt(macro.rdSpending)].join("\n");
 }
 
 function summarizeSeries(series: YearlySeries): string {
@@ -83,7 +103,7 @@ export async function deepDiveAction(query: string): Promise<DeepDiveReport> {
   if (existing) {
     console.log("[DeepDive] DB cache hit", { query: normalizedQuery });
     if (userId) await linkUserSearch(userId, existing.id);
-    return existing.response as DeepDiveReport;
+    return existing.response as unknown as DeepDiveReport;
   }
 
   // ─── Fetch sources ─────────────────────────────────────────────────────────
@@ -97,7 +117,7 @@ export async function deepDiveAction(query: string): Promise<DeepDiveReport> {
   console.log("[DeepDive] Fetching sources", { query: normalizedQuery });
   const start = Date.now();
 
-  const [wikipedia, books, papers, movies, news] = await Promise.all([
+  const [wikipedia, books, papers, movies, news, macro] = await Promise.all([
     withTimeout(
       fetchWikipediaYearly(normalizedQuery, endDate),
       10_000,
@@ -131,29 +151,70 @@ export async function deepDiveAction(query: string): Promise<DeepDiveReport> {
       15_000,
       unavailable("news", "Timeout"),
     ),
+    withTimeout(fetchWorldBankMacro(), 10_000, {
+      internet:  { label: "Internet users",   unit: "% of population", data: [] },
+      gdpGrowth: { label: "GDP growth",        unit: "% annual",        data: [] },
+      rdSpending:{ label: "R&D expenditure",   unit: "% of GDP",        data: [] },
+    }),
   ]);
 
   // ─── Gemini ────────────────────────────────────────────────────────────────
   console.log("[DeepDive] Sources fetched, calling Gemini");
 
-  const prompt = `You are a cultural and intellectual historian with access to quantitative data about the topic "${normalizedQuery}".
+  const prompt = `You are a cultural journalist writing for Wired or The Atlantic — intellectually sharp, accessible to curious non-experts, with a knack for finding the surprising story hidden in data. Your task: write an introductory overview of how "${normalizedQuery}" evolved as a cultural phenomenon from 2015 to present.
 
-Here is the signal data collected from multiple sources (yearly counts from 2015 onwards):
+━━━ SIGNAL DATA ━━━
+Wikipedia pageviews (yearly):   ${summarizeSeries(wikipedia)}
+Books published (Open Library):  ${summarizeSeries(books)}
+Academic papers (CORE):          ${summarizeSeries(papers)}
+Movies/films (TMDB):             ${summarizeSeries(movies)}
+News articles (NYT):             ${summarizeSeries(news)}
+Macroeconomic context:           ${summarizeMacro(macro)}
 
-- Wikipedia pageviews: ${summarizeSeries(wikipedia)}
-- Books published (Open Library): ${summarizeSeries(books)}
-- Academic papers (CORE): ${summarizeSeries(papers)}
-- Movies/films (TMDB): ${summarizeSeries(movies)}
-- News articles (NYT): ${summarizeSeries(news)}
+━━━ SCOPE: WHAT TO ANALYZE ━━━
+You are analyzing "${normalizedQuery}" as a CULTURAL OBJECT — how it moved through public consciousness, media, and discourse.
 
-Based on this data and your knowledge, produce a comprehensive analytical report about "${normalizedQuery}" as a cultural and intellectual phenomenon. Your analysis should go beyond just the data — use your knowledge to enrich it.
+Examples of correct framing:
+- "Bitcoin" → Track media hype cycles, mainstream adoption narrative, pop culture presence — NOT technical blockchain evolution
+- "Feminism" → Fourth-wave resurgence, #MeToo, intersectionality debates — NOT the 1960s history
+- "Climate change" → Greta Thunberg, Paris Agreement media coverage, climate fiction boom — NOT scientific consensus timeline
+- "React" (JavaScript library) → Developer community growth, hiring trends, conference buzz — NOT technical feature releases
 
-Respond with ONLY a valid JSON object matching this exact structure (no markdown, no explanation):
+Focus on: public attention, cultural gatekeepers (NYT, publishers, Hollywood), discourse shifts
+Ignore: technical specifications, academic definitions pre-2015, niche subcommunities
+
+If the query is a person, focus on their cultural impact/fame trajectory, not their biography.
+If the query is a technology, focus on adoption narratives and hype cycles, not technical milestones.
+
+━━━ RULES ━━━
+- Cite at least 2 specific data trends with numbers/years as evidence
+- Explain WHY shifts happened — don't just describe them (e.g., "papers spiked 40% in 2020 likely due to pandemic research priorities")
+- If data is sparse, contradictory, or flat, acknowledge it in one clause — don't fabricate trends
+- Reference macro context ONLY if it plausibly explains a cultural shift
+- Distinguish whether this is a durable shift or temporary spike
+- Write for a curious 25-year-old — no jargon, no "it is worth noting" hedging
+- Respect character limits strictly
+
+━━━ OUTPUT — valid JSON only, no markdown ━━━
 {
-  "origin": "A sentence describing when and how '${normalizedQuery}' originated as a concept or phenomenon, including historical context and founding figures.",
-  "timeline": "A narrative short paragraph tracing its evolution across decades, referencing key milestones, turning points, and how it spread.",
-  "firstMover": "The individual, institution, work, or event widely considered the originator or first mover for '${normalizedQuery}'.",
-  "unexpectedInsight": "One surprising, counterintuitive, or little-known insight about '${normalizedQuery}' that most people would find unexpected."
+  "oneLiner": "Ultra-compressed summary (max 100 chars). Use concrete descriptors, not abstractions.",
+  
+  "hook": "1 punchy sentence (max 120 chars). A provocation or surprising fact — not a definition.",
+  
+  "genesis": "1-2 sentences (max 280 chars). When/how '${normalizedQuery}' emerged as a recognizable concept. Name the originating figure, work, or event if known.",
+  
+  "trajectory": "3-4 sentences (max 400 chars). Trace evolution citing at least 2 data trends. Explain causality: 'X happened because...' not 'X happened and then...'",
+  
+  "inflectionPoint": {
+    "year": number | null,  // null if no clear pivot
+    "explanation": "2 sentences (max 250 chars). What happened that year and why data shifted. If year is null, explain why no inflection exists."
+  },
+  
+  "currentState": "1 sentence (max 150 chars). Where '${normalizedQuery}' stands today. Accelerating, plateauing, or fading?",
+  
+  "didYouKnow": "One genuinely surprising, non-obvious insight (max 200 chars). NOT a restatement of the data — synthesize something unexpected that emerges from cross-referencing sources or historical context. Avoid trivia; aim for 'huh, I never thought about it that way' reactions.",
+  
+  "phase": "one of: genesis | rise | peak | consolidation | decline — based on most recent trend"
 }`;
 
   const genAI = new GoogleGenerativeAI(geminiKey);
@@ -170,8 +231,10 @@ Respond with ONLY a valid JSON object matching this exact structure (no markdown
   const durationMs = Date.now() - start;
 
   // ─── Persist ───────────────────────────────────────────────────────────────
-  const saved = await prisma.search.create({
-    data: { query: normalizedQuery, endpoint: ENDPOINT, response: report as object, durationMs },
+  const saved = await prisma.search.upsert({
+    where: { query_endpoint: { query: normalizedQuery, endpoint: ENDPOINT } },
+    create: { query: normalizedQuery, endpoint: ENDPOINT, response: report as object, durationMs },
+    update: { response: report as object, durationMs },
   });
 
   if (userId) await linkUserSearch(userId, saved.id);

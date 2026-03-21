@@ -126,8 +126,10 @@ export async function GET(request: Request): Promise<Response> {
   console.log("[Explore3D] Fetch complete", { available, total: 5, durationMs });
 
   // ─── Persist ──────────────────────────────────────────────────────────────
-  const saved = await prisma.search.create({
-    data: { query, endpoint: ENDPOINT, response: response as object, durationMs },
+  const saved = await prisma.search.upsert({
+    where: { query_endpoint: { query, endpoint: ENDPOINT } },
+    create: { query, endpoint: ENDPOINT, response: response as object, durationMs },
+    update: { response: response as object, durationMs },
   });
 
   if (userId) await linkUserSearch(userId, saved.id);
