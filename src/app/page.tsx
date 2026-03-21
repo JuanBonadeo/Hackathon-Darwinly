@@ -66,9 +66,9 @@ export default function HomePage() {
 
       <div
         className={cn(
-          "transition-[margin-left] duration-300",
-          "lg:ml-[120px]",
-          isDesktopSidebarExpanded && "lg:ml-[260px]"
+          "transition-[margin-left] duration-420 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+          "lg:ml-30",
+          isDesktopSidebarExpanded && "lg:ml-65"
         )}
       >
         <Navbar isDesktopSidebarExpanded={isDesktopSidebarExpanded} />

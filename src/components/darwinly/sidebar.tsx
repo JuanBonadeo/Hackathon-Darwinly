@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
+import { unlinkCurrentUserSearchByQuery } from "@/app/actions/searches"
 import { signOut, useSession } from "@/lib/auth-client"
 
 interface SidebarProps {
@@ -59,6 +60,7 @@ export function Sidebar({
   const [isOpen, setIsOpen] = useState(false)
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const collapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const animationClass = "duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
 
   useEffect(() => {
     return () => {
@@ -88,7 +90,7 @@ export function Sidebar({
     clearCollapseTimer()
     collapseTimerRef.current = setTimeout(() => {
       onDesktopExpandedChange(false)
-    }, 140)
+    }, 180)
   }
 
   const handleProfileMenuOpenChange = (open: boolean) => {
@@ -134,7 +136,7 @@ export function Sidebar({
 
       {/* Desktop sidebar */}
       <aside
-        className="hidden lg:flex fixed left-0 top-0 h-screen flex-col border-r border-sidebar-border bg-sidebar will-change-[width] transition-[width] duration-500 ease-out"
+        className={`hidden lg:flex fixed left-0 top-0 h-screen flex-col border-r border-sidebar-border bg-sidebar will-change-[width] transition-[width] motion-reduce:transition-none ${animationClass}`}
         style={{ width: isDesktopExpanded ? "220px" : "85px" }}
         onMouseEnter={handleDesktopEnter}
         onMouseLeave={handleDesktopLeave}
@@ -226,7 +228,7 @@ function SidebarContent({
         >
           <div className={`relative h-24 ${isCollapsed ? "w-20" : "w-full"} lg:h-28`}>
             <div
-              className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ease-out ${
+              className={`absolute inset-0 flex items-center justify-center transition-all duration-420 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
                 isCollapsed ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-1"
               }`}
             >
@@ -243,7 +245,7 @@ function SidebarContent({
             </div>
 
             <div
-              className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ease-out ${
+              className={`absolute inset-0 flex items-center justify-center transition-all duration-420 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
                 isCollapsed ? "opacity-0 translate-x-1" : "opacity-100 translate-x-0"
               }`}
             >
@@ -309,9 +311,19 @@ function SidebarContent({
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 shrink-0 text-muted-foreground opacity-70 transition-opacity hover:opacity-100"
-                          onClick={(event) => {
+                          onClick={async (event) => {
                             event.stopPropagation()
                             onDeleteSearchHistory(term)
+
+                            if (!user) {
+                              return
+                            }
+
+                            try {
+                              await unlinkCurrentUserSearchByQuery(term)
+                            } catch (error) {
+                              console.error("Failed to unlink search from user history", error)
+                            }
                           }}
                           aria-label={`Delete search ${term}`}
                           title="Delete search"

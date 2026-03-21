@@ -62,7 +62,7 @@ export default function StarredPage() {
 
       <div
         className={cn(
-          "transition-[margin-left] duration-300",
+          "transition-[margin-left] duration-420 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
           "lg:ml-30",
           isDesktopSidebarExpanded && "lg:ml-65"
         )}
