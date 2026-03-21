@@ -22,7 +22,7 @@ async function fetchCoreYear(
       "Authorization": `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ q: query, yearFrom: year, yearTo: year, limit: 1, offset: 0 }),
+    body: JSON.stringify({ q: `${query} AND yearPublished:${year}`, limit: 1, offset: 0 }),
     cache: "no-store",
   });
 

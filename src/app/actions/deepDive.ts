@@ -3,7 +3,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { headers } from "next/headers";
 import { fetchCoreYearly } from "@/lib/apis/core-papers";
-import { fetchNytYearly } from "@/lib/apis/nyt";
+import { fetchGuardianYearly } from "@/lib/apis/guardian";
 import { fetchOpenLibraryYearly, fetchOpenLibraryTopBooks } from "@/lib/apis/openlibrary";
 import { fetchTmdbYearly } from "@/lib/apis/tmdb";
 import { fetchWikipediaYearly } from "@/lib/apis/wikipedia";
@@ -32,11 +32,8 @@ export interface DeepDiveReport {
 export interface DeepDiveFullResponse {
   report: DeepDiveReport;
   sources: Record<string, YearlyDataPoint[]>;
-  artifacts: {
-    books: Artifact[];
-    papers: Artifact[];
-    movies: Artifact[];
-  };
+  artifacts: Artifact[];
+  fromCache?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -217,8 +214,13 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
   const normalizedQuery = query.toLowerCase().trim();
   const ENDPOINT = "deep-dive-full";
 
-  const session = await auth.api.getSession({ headers: await headers() });
-  const userId = session?.user?.id ?? null;
+  let userId: string | null = null;
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    userId = session?.user?.id ?? null;
+  } catch {
+    // Auth unavailable — proceed without linking user
+  }
 
   // ─── DB cache hit ───────────────────────────────────────────────────────────
   const existing = await prisma.search.findUnique({
@@ -228,7 +230,7 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
   if (existing) {
     console.log("[DeepDive] DB cache hit", { query: normalizedQuery });
     if (userId) await linkUserSearch(userId, existing.id);
-    return existing.response as unknown as DeepDiveFullResponse;
+    return { ...(existing.response as unknown as DeepDiveFullResponse), fromCache: true };
   }
 
   // ─── Fetch sources ─────────────────────────────────────────────────────────
@@ -237,7 +239,7 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
 
   const endDate = currentEndDate();
   const coreKey = process.env.CORE_API_KEY;
-  const nytKey = process.env.NYT_API_KEY;
+  const guardianKey = process.env.GUARDIAN_API_KEY;
   const yearEnd = new Date().getFullYear();
   const yearStart = yearEnd - 10;
 
@@ -273,10 +275,14 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
         unavailable("movies", "Timeout"),
       ),
       withTimeout(
-        nytKey
-          ? fetchNytYearly(normalizedQuery, nytKey)
-          : Promise.resolve(unavailable("news", "NYT_API_KEY not configured")),
-        15_000,
+        guardianKey
+          ? fetchGuardianYearly(normalizedQuery, guardianKey).then((data): YearlySeries => ({
+              id: "news",
+              available: data.some((d) => d.count > 0),
+              data,
+            }))
+          : Promise.resolve(unavailable("news", "GUARDIAN_API_KEY not configured")),
+        20_000,
         unavailable("news", "Timeout"),
       ),
       withTimeout(fetchWorldBankMacro(), 10_000, {
@@ -289,6 +295,22 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
       withTimeout(fetchArtifactMovies(normalizedQuery, yearStart, yearEnd), 10_000, []),
     ]);
 
+  // ─── Build artifact candidate pool for Gemini ──────────────────────────────
+  const allCandidates: Artifact[] = [
+    ...artifactBooks.slice(0, 3),
+    ...artifactPapers.slice(0, 3),
+    ...artifactMovies.slice(0, 3),
+  ]
+
+  const candidateList = allCandidates
+    .map((a, i) => {
+      const badge = a.source === 'openlibrary' ? 'Book' : a.source === 'semanticscholar' ? 'Paper' : 'Movie'
+      const author = a.author ? ` by ${a.author}` : ''
+      const score = a.source === 'semanticscholar' ? ` — ${a.score} citations` : ''
+      return `[${i}] ${badge}: "${a.title}" (${a.year})${author}${score}`
+    })
+    .join('\n')
+
   // ─── Build sources map (Explore3D) ─────────────────────────────────────────
   const allSeries = [wikipedia, books, papers, movies, news];
   const sources: Record<string, YearlyDataPoint[]> = {};
@@ -299,14 +321,17 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
   // ─── Gemini ────────────────────────────────────────────────────────────────
   console.log("[DeepDive] Sources fetched, calling Gemini");
 
-  const prompt = `You are a cultural journalist writing for Wired or The Atlantic — intellectually sharp, accessible to curious non-experts, with a knack for finding the surprising story hidden in data. Your task: write an introductory overview of how "${normalizedQuery}" evolved as a cultural phenomenon from 2015 to present.
+  const prompt = `You are a cultural journalist writing for Wired or The Atlantic — intellectually sharp, accessible to curious non-experts, with a knack for finding the surprising story hidden in data. Your task: write an introductory overview of how "${normalizedQuery}" evolved as a cultural phenomenon from 2015 to present, and select the 3 most culturally influential resources from the candidate list below.
+
+━━━ ARTIFACT CANDIDATES ━━━
+${candidateList || '(none available)'}
 
 ━━━ SIGNAL DATA ━━━
 Wikipedia pageviews (yearly):   ${summarizeSeries(wikipedia)}
 Books published (Open Library):  ${summarizeSeries(books)}
 Academic papers (CORE):          ${summarizeSeries(papers)}
 Movies/films (TMDB):             ${summarizeSeries(movies)}
-News articles (NYT):             ${summarizeSeries(news)}
+News articles (Guardian):        ${summarizeSeries(news)}
 Macroeconomic context:           ${summarizeMacro(macro)}
 
 ━━━ SCOPE: WHAT TO ANALYZE ━━━
@@ -352,7 +377,9 @@ If the query is a technology, focus on adoption narratives and hype cycles, not 
 
   "didYouKnow": "One genuinely surprising, non-obvious insight (max 200 chars). NOT a restatement of the data — synthesize something unexpected that emerges from cross-referencing sources or historical context. Avoid trivia; aim for 'huh, I never thought about it that way' reactions.",
 
-  "phase": "one of: genesis | rise | peak | consolidation | decline — based on most recent trend"
+  "phase": "one of: genesis | rise | peak | consolidation | decline — based on most recent trend",
+
+  "selectedArtifacts": [i, j, k]  // exactly 3 indices from the ARTIFACT CANDIDATES list. Pick the ones with the greatest cultural reach and relevance — not just the highest score. Prefer variety across categories (Book, Paper, Movie) when meaningful. If fewer than 3 candidates exist, return fewer.
 }`;
 
   const genAI = new GoogleGenerativeAI(geminiKey);
@@ -365,18 +392,20 @@ If the query is a technology, focus on adoption narratives and hype cycles, not 
     ? text.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim()
     : text;
 
-  const report = JSON.parse(jsonText) as DeepDiveReport;
+  const parsed = JSON.parse(jsonText) as DeepDiveReport & { selectedArtifacts?: number[] }
+  const { selectedArtifacts: selectedIndices = [], ...report } = parsed
   const durationMs = Date.now() - start;
+
+  const artifacts = (Array.isArray(selectedIndices) ? selectedIndices : [])
+    .filter((i) => Number.isInteger(i) && i >= 0 && i < allCandidates.length)
+    .slice(0, 3)
+    .map((i) => allCandidates[i])
 
   // ─── Assemble full response ────────────────────────────────────────────────
   const response: DeepDiveFullResponse = {
-    report,
+    report: report as DeepDiveReport,
     sources,
-    artifacts: {
-      books: artifactBooks.slice(0, 3),
-      papers: artifactPapers.slice(0, 3),
-      movies: artifactMovies.slice(0, 3),
-    },
+    artifacts,
   };
 
   // ─── Persist ───────────────────────────────────────────────────────────────
