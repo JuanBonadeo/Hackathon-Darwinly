@@ -6,8 +6,9 @@ import { Darwinly3DChartWrapper } from './darwinly-3d-chart-wrapper'
 import { DarwinlyTimeline } from './DarwinlyTimeline'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertCircle, Loader2, ArrowLeft } from 'lucide-react'
+import { AlertCircle, Loader2, ArrowLeft, ExternalLink } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import type { ArtifactItem } from '@/types/api'
 
 interface SearchResultsProps {
   query: string
@@ -38,7 +39,48 @@ const SOURCE_BREAKDOWN_CONFIG = {
 }
 
 export function SearchResults({ query, onBack }: SearchResultsProps) {
-  const { data, chartData, loading, error, fetchSearchData } = useSearchData()
+  const {
+    data,
+    deepDive,
+    artifacts,
+    chartData,
+    loading,
+    insightsLoading,
+    artifactsLoading,
+    error,
+    insightsError,
+    artifactsError,
+    fetchSearchData,
+  } = useSearchData()
+
+  const renderArtifactList = (title: string, items: ArtifactItem[]) => (
+    <div className="space-y-2">
+      <h4 className="font-semibold text-base">{title}</h4>
+      {items.length === 0 && (
+        <p className="text-sm text-muted-foreground">No data available.</p>
+      )}
+      {items.map((item) => (
+        <div key={`${title}-${item.title}-${item.year}`} className="rounded-md border p-3">
+          <p className="font-medium leading-snug">{item.title}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {item.author ? `${item.author} · ` : ''}
+            {item.year} · score {Math.round(item.score).toLocaleString()}
+          </p>
+          {item.url && (
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-primary mt-2 hover:underline"
+            >
+              Open source
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
+        </div>
+      ))}
+    </div>
+  )
 
   // Auto-fetch when query prop changes
   useEffect(() => {
@@ -124,6 +166,78 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
                   )
                 })}
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="w-full">
+            <CardHeader>
+              <CardTitle className="text-2xl sm:text-3xl">Deep Dive</CardTitle>
+              <CardDescription className="text-base sm:text-lg leading-relaxed">
+                Narrative summary generated from cross-source trends
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {insightsLoading && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading deep-dive insights...
+                </div>
+              )}
+
+              {!insightsLoading && insightsError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{insightsError}</AlertDescription>
+                </Alert>
+              )}
+
+              {!insightsLoading && deepDive && (
+                <div className="space-y-3">
+                  <p className="text-lg font-semibold">{deepDive.report.hook}</p>
+                  <p className="text-sm text-muted-foreground">{deepDive.report.oneLiner}</p>
+                  <p className="text-sm leading-relaxed">{deepDive.report.genesis}</p>
+                  <p className="text-sm leading-relaxed">{deepDive.report.trajectory}</p>
+                  <p className="text-sm leading-relaxed">{deepDive.report.currentState}</p>
+                  <p className="text-sm leading-relaxed italic">{deepDive.report.didYouKnow}</p>
+                  <div className="text-xs text-muted-foreground">
+                    Inflection point:{' '}
+                    {deepDive.report.inflectionPoint.year ?? 'N/A'} -{' '}
+                    {deepDive.report.inflectionPoint.explanation}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="w-full">
+            <CardHeader>
+              <CardTitle className="text-2xl sm:text-3xl">Key Artifacts</CardTitle>
+              <CardDescription className="text-base sm:text-lg leading-relaxed">
+                Representative books, papers, and movies for this topic
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {artifactsLoading && (
+                <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading artifacts...
+                </div>
+              )}
+
+              {!artifactsLoading && artifactsError && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{artifactsError}</AlertDescription>
+                </Alert>
+              )}
+
+              {!artifactsLoading && artifacts && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  {renderArtifactList('Books', artifacts.books)}
+                  {renderArtifactList('Papers', artifacts.papers)}
+                  {renderArtifactList('Movies', artifacts.movies)}
+                </div>
+              )}
             </CardContent>
           </Card>
         </>
