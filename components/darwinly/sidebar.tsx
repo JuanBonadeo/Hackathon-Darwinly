@@ -91,6 +91,7 @@ export function Sidebar({
           <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
           <SidebarContent 
             searchHistory={searchHistory} 
+            onNavLinkClick={() => setIsOpen(false)}
             onSearchHistoryClick={(term) => {
               onSearchHistoryClick(term)
               setIsOpen(false)
@@ -134,17 +135,39 @@ function SidebarContent({
   onSearchHistoryClick,
   onDeleteSearchHistory,
   onLogoClick,
+  onNavLinkClick,
   isCollapsed = false,
 }: { 
   searchHistory: string[]
   onSearchHistoryClick: (term: string) => void 
   onDeleteSearchHistory: (term: string) => void
   onLogoClick: () => void
+  onNavLinkClick?: () => void
   isCollapsed?: boolean
 }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme !== "light"
   const recentSearches = [...searchHistory].reverse()
+
+  const handleNavClick = (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (!href.startsWith("#")) {
+      return
+    }
+
+    const section = document.querySelector(href)
+    if (!section) {
+      return
+    }
+
+    event.preventDefault()
+    section.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+      block: "start",
+    })
+    onNavLinkClick?.()
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -206,6 +229,7 @@ function SidebarContent({
                 <li key={link.href}>
                   <Link
                     href={link.href}
+                    onClick={(event) => handleNavClick(event, link.href)}
                     className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
                   >
                     <link.icon className="h-5 w-5" />

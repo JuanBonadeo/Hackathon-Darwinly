@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Sidebar } from "@/components/darwinly/sidebar"
 import { Navbar } from "@/components/darwinly/navbar"
 import { HeroSection } from "@/components/darwinly/hero-section"
@@ -19,7 +19,11 @@ export default function HomePage() {
   const [searchHistory, setSearchHistory] = useState<string[]>([])
   const [mounted, setMounted] = useState(false)
   const [isDesktopSidebarExpanded, setIsDesktopSidebarExpanded] = useState(false)
-    const [activeQuery, setActiveQuery] = useState<string | null>(null)
+  const [activeQuery, setActiveQuery] = useState<string | null>(null)
+  const [pendingQuery, setPendingQuery] = useState<string | null>(null)
+  const [isTransitioningToResults, setIsTransitioningToResults] = useState(false)
+  const transitionStartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const transitionEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Load search history from localStorage on mount
   useEffect(() => {
@@ -30,6 +34,15 @@ export default function HomePage() {
         setSearchHistory(JSON.parse(stored))
       } catch {
         setSearchHistory([])
+      }
+    }
+
+    return () => {
+      if (transitionStartTimerRef.current) {
+        clearTimeout(transitionStartTimerRef.current)
+      }
+      if (transitionEndTimerRef.current) {
+        clearTimeout(transitionEndTimerRef.current)
       }
     }
   }, [])
@@ -47,9 +60,31 @@ export default function HomePage() {
       MAX_HISTORY_ITEMS
     )
     saveHistory(newHistory)
-    
-      // Set active query to show results
+
+    if (activeQuery) {
       setActiveQuery(term)
+      return
+    }
+
+    if (transitionStartTimerRef.current) {
+      clearTimeout(transitionStartTimerRef.current)
+    }
+    if (transitionEndTimerRef.current) {
+      clearTimeout(transitionEndTimerRef.current)
+    }
+
+    setPendingQuery(term)
+    setIsTransitioningToResults(true)
+
+    transitionStartTimerRef.current = setTimeout(() => {
+      setActiveQuery(term)
+      window.scrollTo({ top: 0, behavior: "auto" })
+    }, 680)
+
+    transitionEndTimerRef.current = setTimeout(() => {
+      setIsTransitioningToResults(false)
+      setPendingQuery(null)
+    }, 1320)
   }
 
   const handleSearchHistoryClick = (term: string) => {
@@ -61,9 +96,17 @@ export default function HomePage() {
     saveHistory(newHistory)
   }
 
-    const handleBackToHome = () => {
-      setActiveQuery(null)
+  const handleBackToHome = () => {
+    if (transitionStartTimerRef.current) {
+      clearTimeout(transitionStartTimerRef.current)
     }
+    if (transitionEndTimerRef.current) {
+      clearTimeout(transitionEndTimerRef.current)
+    }
+    setIsTransitioningToResults(false)
+    setPendingQuery(null)
+    setActiveQuery(null)
+  }
 
   if (!mounted) {
     return null
@@ -93,7 +136,13 @@ export default function HomePage() {
         <Navbar isDesktopSidebarExpanded={isDesktopSidebarExpanded} />
 
         {/* Main Content */}
-        <main>
+        <main className="relative">
+          <div
+            className={cn(
+              "transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
+              isTransitioningToResults && "scale-[0.997] opacity-65 blur-[1px] pointer-events-none"
+            )}
+          >
             {!activeQuery ? (
               <>
                 <HeroSection onSearch={handleSearch} />
@@ -105,6 +154,27 @@ export default function HomePage() {
             ) : (
               <SearchResults query={activeQuery} onBack={handleBackToHome} />
             )}
+          </div>
+
+          {isTransitioningToResults && (
+            <div className="search-transition-overlay" aria-hidden="true">
+              <div className="search-transition-backdrop" />
+              <div className="search-transition-glow" />
+
+              <div className="search-transition-content">
+                <div className="search-transition-rings">
+                  <span className="search-transition-ring search-transition-ring-lg" />
+                  <span className="search-transition-ring search-transition-ring-md" />
+                  <span className="search-transition-ring search-transition-ring-sm" />
+                  <span className="search-transition-core" />
+                </div>
+
+                <div className="search-transition-label">
+                  Analyzing <strong>{pendingQuery ?? "your query"}</strong>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
 
         {/* Footer */}

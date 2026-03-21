@@ -1,7 +1,6 @@
 ﻿'use client'
 
 import { useEffect } from 'react'
-import Link from 'next/link'
 import { useSearchData } from '@/hooks/use-search-data'
 import { Darwinly3DChartWrapper } from './darwinly-3d-chart-wrapper'
 import { DarwinlyTimeline } from './DarwinlyTimeline'
@@ -49,14 +48,20 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
   }, [query, fetchSearchData])
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-8 space-y-6">
+    <div className="w-full max-w-7xl mx-auto px-4 pt-20 pb-8 space-y-6">
       {/* Back Button and Title */}
-      <div className="flex items-center gap-4 mb-8">
-        <Button variant="ghost" size="sm" asChild className="gap-2">
-          <Link href="/" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4" />
-            Back to Home
-          </Link>
+      <div className="relative z-10 flex items-center gap-4 mb-8">
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          onClick={onBack}
+          className="h-11 min-w-[168px] px-5 gap-2 shrink-0 rounded-full bg-card/60 hover:bg-card cursor-pointer"
+          aria-label="Back to Home"
+          title="Back to Home"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Home
         </Button>
         <h1 className="text-2xl sm:text-3xl font-bold">{query}</h1>
       </div>
