@@ -80,17 +80,28 @@ function getYearsRange(sources) {
   return Array.from(yearsSet).sort((a, b) => a - b)
 }
 
+function hasMeaningfulSourceData(sourceData) {
+  if (!Array.isArray(sourceData)) return false
+
+  return sourceData.some((item) => Number(item?.count || 0) > 0)
+}
+
+function getActiveSources(sources) {
+  return SOURCE_NAMES.filter((sourceName) => hasMeaningfulSourceData(sources[sourceName]))
+}
+
 /**
  * Builds dataset rows with configurable normalization:
  * [[year, source, z_value, source_index, raw_count, year_total, source_max, year_share], ...]
  */
 function buildDataset(sources, scaleMode) {
   const years = getYearsRange(sources)
+  const activeSources = getActiveSources(sources)
   const rows = []
   const yearTotals = new Map(years.map((year) => [year, 0]))
-  const sourceMaxMap = new Map(SOURCE_NAMES.map((source) => [source, 0]))
+  const sourceMaxMap = new Map(activeSources.map((source) => [source, 0]))
 
-  SOURCE_NAMES.forEach((sourceName) => {
+  activeSources.forEach((sourceName) => {
     const sourceData = sources[sourceName]
     if (!Array.isArray(sourceData)) return
 
@@ -107,7 +118,7 @@ function buildDataset(sources, scaleMode) {
   const globalLogMax = Math.log10(globalMax + 1)
   
   // For each source, iterate through all years
-  SOURCE_NAMES.forEach((sourceName, sourceIndex) => {
+  activeSources.forEach((sourceName, sourceIndex) => {
     const sourceData = sources[sourceName]
     
     if (!Array.isArray(sourceData)) return
@@ -151,15 +162,18 @@ function buildDataset(sources, scaleMode) {
     })
   })
   
-  return { rows, years: years.map((y) => y.toString()) }
+  return {
+    rows,
+    years: years.map((y) => y.toString()),
+    activeSources,
+  }
 }
 
 /**
  * Gets color for a source by its index
  */
-function getColorBySourceIndex(sourceIndex) {
-  const colors = Object.values(SOURCE_COLORS)
-  return colors[sourceIndex] || '#999999'
+function getColorBySource(sourceKey) {
+  return SOURCE_COLORS[sourceKey] || '#999999'
 }
 
 function blendHexColor(hexColor, targetHex, ratio) {
@@ -178,8 +192,8 @@ function blendHexColor(hexColor, targetHex, ratio) {
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
 }
 
-function getBarBorderColor(sourceIndex, state = 'normal') {
-  const baseColor = getColorBySourceIndex(sourceIndex)
+function getBarBorderColor(sourceKey, state = 'normal') {
+  const baseColor = getColorBySource(sourceKey)
 
   if (state === 'emphasis') {
     return blendHexColor(baseColor, '#ffffff', 0.25)
@@ -319,7 +333,7 @@ export default class Darwinly3DChart {
    * Build complete chart options
    */
   _buildChartOptions() {
-    const { rows, years } = buildDataset(this.data.sources, this.options.zScaleMode)
+    const { rows, years, activeSources } = buildDataset(this.data.sources, this.options.zScaleMode)
     const scaleMeta = getScaleMeta(this.options.zScaleMode)
     const themeStyles = getThemeStyles(this.options.isDarkMode !== false)
     
@@ -410,7 +424,7 @@ export default class Darwinly3DChart {
       
       yAxis3D: {
         type: 'category',
-        data: SOURCE_NAMES,
+        data: activeSources,
         name: 'Source (Y)',
         nameGap: 18,
         nameTextStyle: {
@@ -475,12 +489,12 @@ export default class Darwinly3DChart {
             opacity: 1,
             borderWidth: 2.2,
             borderColor: (params) => {
-              const sourceIndex = params.data[3]
-              return getBarBorderColor(sourceIndex, 'normal')
+              const sourceKey = params.data[1]
+              return getBarBorderColor(sourceKey, 'normal')
             },
             color: (params) => {
-              const sourceIndex = params.data[3]
-              return getColorBySourceIndex(sourceIndex)
+              const sourceKey = params.data[1]
+              return getColorBySource(sourceKey)
             },
           },
           emphasis: {
@@ -488,12 +502,12 @@ export default class Darwinly3DChart {
               opacity: 1,
               borderWidth: 2.8,
               borderColor: (params) => {
-                const sourceIndex = params.data[3]
-                return getBarBorderColor(sourceIndex, 'emphasis')
+                const sourceKey = params.data[1]
+                return getBarBorderColor(sourceKey, 'emphasis')
               },
               color: (params) => {
-                const sourceIndex = params.data[3]
-                return getColorBySourceIndex(sourceIndex)
+                const sourceKey = params.data[1]
+                return getColorBySource(sourceKey)
               },
             },
           },
