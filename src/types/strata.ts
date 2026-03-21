@@ -64,6 +64,12 @@ export interface ArtifactsResponse {
   movies: Artifact[];
 }
 
+export interface TimelineAnnotation {
+  year: number;
+  type: "inflection" | "peak" | "milestone";
+  explanation: string;
+}
+
 export interface YearlyDataPoint {
   year: number;
   count: number;
