@@ -31,6 +31,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { unlinkCurrentUserSearchByQuery } from "@/app/actions/searches"
 import { signOut, useSession } from "@/lib/auth-client"
+import { UsageBattery } from "./usage-battery"
 
 interface SidebarProps {
   searchHistory: string[]
@@ -328,8 +329,13 @@ function SidebarContent({
             </ScrollArea>
           </div>
 
+          {/* Usage Battery */}
+          <div className="mt-auto px-2 pb-2">
+            <UsageBattery collapsed={false} />
+          </div>
+
           {/* Auth */}
-          <div className="mt-auto p-1 pb-3">
+          <div className="p-1 pb-3">
             {user ? (
               <DropdownMenu onOpenChange={onProfileMenuOpenChange}>
                 <DropdownMenuTrigger asChild>
@@ -380,7 +386,9 @@ function SidebarContent({
           </div>
         </>
       ) : (
-        <div className="mt-auto p-1 pb-3 flex justify-center">
+        <div className="mt-auto p-1 pb-3 flex flex-col items-center gap-2">
+          {/* Usage Battery collapsed */}
+          <UsageBattery collapsed={true} />
           {user ? (
             <DropdownMenu onOpenChange={onProfileMenuOpenChange}>
               <DropdownMenuTrigger asChild>

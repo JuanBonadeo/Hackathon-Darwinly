@@ -55,6 +55,10 @@ export const useSearchData = () => {
         setFromCache(result.fromCache ?? false)
         setUserSearched(result.userSearched ?? false)
 
+        if (result.usage) {
+          window.dispatchEvent(new CustomEvent("darwinly:usage-update", { detail: result.usage }))
+        }
+
         const transformed = transformDataForChart(result.sources)
         setChartData(transformed)
 

@@ -16,6 +16,7 @@ import { fetchGitHubData, type GitHubData } from "@/lib/apis/github";
 import { detectGitHubRepo } from "./is-tech-query";
 
 import { fetchCryptoData, type CryptoData } from "@/lib/apis/coinmarketcap";
+import { checkRateLimit } from "@/lib/rate-limit";
 import type { Artifact, TimelineAnnotation, YearlyDataPoint, YearlySeries } from "@/types/darwinly";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -35,6 +36,12 @@ export interface DeepDiveReport {
   annotations?: TimelineAnnotation[];
 }
 
+export interface UsageInfo {
+  used: number;
+  remaining: number;
+  limit: number;
+}
+
 export interface DeepDiveFullResponse {
   report: DeepDiveReport;
   sources: Record<string, YearlyDataPoint[]>;
@@ -42,7 +49,8 @@ export interface DeepDiveFullResponse {
   github?: GitHubData | null;
   crypto?: CryptoData | null;
   fromCache?: boolean;
-  userSearched?: boolean; // true if user has searched this before
+  userSearched?: boolean;
+  usage?: UsageInfo;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -240,6 +248,17 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
     // Auth unavailable — proceed without linking user
   }
 
+  // ─── Rate limit ─────────────────────────────────────────────────────────────
+  const headersList = await headers();
+  const ip = headersList.get("x-forwarded-for")?.split(",")[0]?.trim()
+    ?? headersList.get("x-real-ip")
+    ?? "unknown";
+  const identifier = userId ? `user:${userId}` : `ip:${ip}`;
+  const rateLimit = checkRateLimit(identifier);
+  if (!rateLimit.allowed) {
+    throw new Error("RATE_LIMIT_EXCEEDED");
+  }
+
   // ─── DB cache hit ───────────────────────────────────────────────────────────
   const existing = await prisma.search.findUnique({
     where: { query_endpoint: { query: cacheQuery, endpoint: ENDPOINT } },
@@ -276,7 +295,7 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
       crypto = await fetchCryptoData(cacheQuery);
     }
 
-    return { ...cached, github, crypto, fromCache: true, userSearched };
+    return { ...cached, github, crypto, fromCache: true, userSearched, usage: { used: rateLimit.used, remaining: rateLimit.remaining, limit: rateLimit.limit } };
   }
 
   // ─── Fetch sources ─────────────────────────────────────────────────────────
@@ -474,7 +493,8 @@ If the query is a technology, focus on adoption narratives and hype cycles, not 
     artifacts,
     github,
     crypto,
-    userSearched: false, // New search, not from user's history
+    userSearched: false,
+    usage: { used: rateLimit.used, remaining: rateLimit.remaining, limit: rateLimit.limit },
   };
 
   // ─── Persist ───────────────────────────────────────────────────────────────
