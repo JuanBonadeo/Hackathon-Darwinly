@@ -1,6 +1,18 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+
+// Delays a boolean flag becoming true — resets immediately when source goes false.
+// Uses startTransition so heavy renders (charts) don't block streaming updates.
+function useDelayedFlag(source: boolean, delayMs: number): boolean {
+  const [value, setValue] = useState(false)
+  useEffect(() => {
+    if (!source) { setValue(false); return }
+    const t = setTimeout(() => React.startTransition(() => setValue(true)), delayMs)
+    return () => clearTimeout(t)
+  }, [source, delayMs])
+  return value
+}
 import { useSearchData } from '@/hooks/use-search-data'
 import { useSimulatedStreaming } from '@/hooks/use-simulated-streaming'
 import { LoadingTransition } from './loading-transition'
@@ -68,34 +80,65 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
     loadingState = 'cached-for-user'
   }
 
-  // Streaming hooks — only active when shouldAnimate = true (fresh search)
-  const hookS       = useSimulatedStreaming(report?.hook,                        shouldStream,                       10, 130)
-  const oneLinerS   = useSimulatedStreaming(report?.oneLiner,                    shouldStream && hookS.isDone,       12, 115)
-  const dykS        = useSimulatedStreaming(report?.didYouKnow,                  shouldStream && oneLinerS.isDone,   11, 115)
-  const genesisS    = useSimulatedStreaming(report?.genesis,                     shouldStream && dykS.isDone,        12, 110)
-  const trajectoryS = useSimulatedStreaming(report?.trajectory,                  shouldStream && genesisS.isDone,    12, 110)
-  const currentS    = useSimulatedStreaming(report?.currentState,                shouldStream && trajectoryS.isDone, 12, 110)
+  const PAUSE       = 400  // pause between text sections
+  const CHART_PAUSE = 900  // extra time for charts to finish rendering
 
-  // Display text — streamed when animating, direct from report when cached
+  // Streaming chain — each section waits for the previous to finish + a pause
+  const hookS             = useSimulatedStreaming(report?.hook,         shouldStream,                      5, 145)
+  const oneLinerEnabled   = useDelayedFlag(shouldStream && hookS.isDone,               PAUSE)
+  const oneLinerS         = useSimulatedStreaming(report?.oneLiner,     oneLinerEnabled,                   6, 130)
+  const dykEnabled        = useDelayedFlag(oneLinerEnabled && oneLinerS.isDone,        PAUSE)
+  const dykS              = useSimulatedStreaming(report?.didYouKnow,   dykEnabled,                        5, 130)
+  const genesisEnabled    = useDelayedFlag(dykEnabled && dykS.isDone,                 PAUSE)
+  const genesisS          = useSimulatedStreaming(report?.genesis,      genesisEnabled,                    6, 125)
+  const timelineEnabled   = useDelayedFlag(genesisEnabled && genesisS.isDone,         PAUSE)
+  const trajectoryEnabled = useDelayedFlag(timelineEnabled,                            CHART_PAUSE) // wait for Timeline to paint
+  const trajectoryS       = useSimulatedStreaming(report?.trajectory,   trajectoryEnabled,                 6, 125)
+  const evolutionEnabled  = useDelayedFlag(trajectoryEnabled && trajectoryS.isDone,   PAUSE)
+  const currentEnabled    = useDelayedFlag(evolutionEnabled,                           CHART_PAUSE) // wait for 3D chart to paint
+  const currentS          = useSimulatedStreaming(report?.currentState, currentEnabled,                    6, 125)
+  const footerEnabled     = useDelayedFlag(currentEnabled && currentS.isDone,         PAUSE)
+
+  // Display text — streamed when animating, full text when cached
   const hookText       = shouldStream ? hookS.displayedText       : (report?.hook ?? '')
   const oneLinerText   = shouldStream ? oneLinerS.displayedText   : (report?.oneLiner ?? '')
   const dykText        = shouldStream ? dykS.displayedText        : (report?.didYouKnow ?? '')
   const genesisText    = shouldStream ? genesisS.displayedText    : (report?.genesis ?? '')
   const trajectoryText = shouldStream ? trajectoryS.displayedText : (report?.trajectory ?? '')
   const currentText    = shouldStream ? currentS.displayedText    : (report?.currentState ?? '')
-  // Visibility gates — sequential when animating, all true immediately when cached
-  const showOneLiner    = !shouldStream || hookS.isDone
-  const showDyk         = !shouldStream || oneLinerS.isDone
-  const showGenesis     = !shouldStream || dykS.isDone
-  const showTimeline    = !shouldStream || genesisS.isDone
-  const showTrajectory  = !shouldStream || showTimeline
-  const showEvolution   = !shouldStream || trajectoryS.isDone
-  const showCurrentState = !shouldStream || showEvolution
-  const showFooter      = !shouldStream || currentS.isDone
+
+  // Visibility gates — sequential when streaming, all true when cached
+  const showOneLiner     = !shouldStream || oneLinerEnabled
+  const showDyk          = !shouldStream || dykEnabled
+  const showGenesis      = !shouldStream || genesisEnabled
+  const showTimeline     = !shouldStream || timelineEnabled
+  const showTrajectory   = !shouldStream || trajectoryEnabled
+  const showEvolution    = !shouldStream || evolutionEnabled
+  const showCurrentState = !shouldStream || currentEnabled
+  const showFooter       = !shouldStream || footerEnabled
 
   // Staggered delay for cached results (elements mount simultaneously)
   const d = (n: number) =>
     shouldStream ? {} : { animationDelay: `${n * 80}ms` }
+
+  // Refs for auto-scroll during streaming
+  const dykRef        = useRef<HTMLDivElement>(null)
+  const genesisRef    = useRef<HTMLDivElement>(null)
+  const timelineRef   = useRef<HTMLDivElement>(null)
+  const trajectoryRef = useRef<HTMLDivElement>(null)
+  const evolutionRef  = useRef<HTMLDivElement>(null)
+  const currentRef    = useRef<HTMLDivElement>(null)
+
+  function scrollTo(ref: React.RefObject<HTMLDivElement | null>) {
+    setTimeout(() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 80)
+  }
+
+  useEffect(() => { if (shouldStream && showDyk)          scrollTo(dykRef)         }, [showDyk,          shouldStream]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (shouldStream && showGenesis)      scrollTo(genesisRef)     }, [showGenesis,      shouldStream]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (shouldStream && showTimeline)     scrollTo(timelineRef)    }, [showTimeline,     shouldStream]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (shouldStream && showTrajectory)   scrollTo(trajectoryRef)  }, [showTrajectory,   shouldStream]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (shouldStream && showEvolution)    scrollTo(evolutionRef)   }, [showEvolution,    shouldStream]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (shouldStream && showCurrentState) scrollTo(currentRef)     }, [showCurrentState, shouldStream]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const getSourceTotal = (key: string) =>
     chartData
@@ -167,7 +210,7 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
           <CardContent className="pt-6 pb-8 space-y-6">
 
             {/* Hook — always visible first */}
-            <h2 className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-3xl sm:text-4xl font-bold leading-tight min-h-10">
+            <h2 id="search-hook" className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-3xl sm:text-4xl font-bold leading-tight min-h-10">
               {hookText}
             </h2>
 
@@ -180,7 +223,12 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
 
             {/* Did You Know callout */}
             {showDyk && (
-              <div className="animate-in fade-in slide-in-from-bottom-3 duration-600 border-l-4 border-yellow-400 bg-yellow-400/10 pl-4 py-3" style={d(2)}>
+              <div
+                ref={dykRef}
+                key="dyk-box"
+                className="animate-in fade-in slide-in-from-bottom-6 duration-700 fill-mode-both border-l-4 border-yellow-400 bg-yellow-400/10 pl-4 py-3"
+                style={shouldStream ? { animationDelay: '120ms' } : d(2)}
+              >
                 <p className="text-sm flex items-start gap-2">
                   <span className="text-base shrink-0">💡</span>
                   <span className="leading-relaxed">{dykText}</span>
@@ -190,14 +238,14 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
 
             {/* Genesis */}
             {showGenesis && (
-              <p className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-base leading-relaxed" style={d(3)}>
+              <p id="search-genesis" ref={genesisRef} className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-base leading-relaxed" style={d(3)}>
                 {genesisText}
               </p>
             )}
 
             {/* Timeline — appears after genesis finishes */}
             {showTimeline && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 my-8" style={d(4)}>
+              <div id="search-timeline" ref={timelineRef} className="animate-in fade-in slide-in-from-bottom-4 duration-700 my-8" style={d(4)}>
                 <DarwinlyTimeline
                   data={data}
                   annotations={deepDive.report.annotations}
@@ -207,14 +255,14 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
 
             {/* Trajectory */}
             {showTrajectory && (
-              <p className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-base leading-relaxed" style={d(5)}>
+              <p ref={trajectoryRef} className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-base leading-relaxed" style={d(5)}>
                 {trajectoryText}
               </p>
             )}
 
             {/* Evolution Map — appears after trajectory finishes */}
             {showEvolution && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 my-8" style={d(6)}>
+              <div id="search-evolution" ref={evolutionRef} className="animate-in fade-in slide-in-from-bottom-4 duration-700 my-8" style={d(6)}>
                 <Darwinly3DChartWrapper
                   data={data}
                   barSize={8}
@@ -249,7 +297,13 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
 
             {/* Current State */}
             {showCurrentState && (
-              <div className="animate-in fade-in slide-in-from-bottom-3 duration-600 border-l-4 border-blue-500 bg-blue-500/10 pl-4 py-3" style={d(7)}>
+              <div
+                id="search-current"
+                ref={currentRef}
+                key="current-box"
+                className="animate-in fade-in slide-in-from-bottom-6 duration-700 fill-mode-both border-l-4 border-blue-500 bg-blue-500/10 pl-4 py-3"
+                style={shouldStream ? { animationDelay: '120ms' } : d(7)}
+              >
                 <p className="text-sm flex items-start gap-2">
                   <span className="text-base shrink-0"></span>
                   <span className="leading-relaxed">{currentText}</span>
@@ -278,7 +332,7 @@ export function SearchResults({ query, onBack }: SearchResultsProps) {
 
       {/* Key Resources — appears after article is fully revealed */}
       {mixedArtifacts.length > 0 && transitionDone && !loading && showFooter && (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-5 px-1" style={d(10)}>
+        <div id="search-resources" className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-5 px-1" style={d(10)}>
           <h2 className="text-xl font-bold">Key Resources</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {mixedArtifacts.map((item, i) => {

@@ -48,11 +48,10 @@ export function HowItWorksSection() {
 
   return (
     <section ref={sectionRef} id="how-it-works" className="px-6 py-20 sm:py-24">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-14 grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+      <div className="max-w-5xl mx-auto">
+        <div className="mb-16 grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
           <div>
             <span className="section-kicker">Process</span>
-
             <h2
               className={cn(
                 "mt-5 text-3xl sm:text-4xl font-semibold text-foreground transition-all duration-1200 ease-out",
@@ -62,7 +61,6 @@ export function HowItWorksSection() {
               From curiosity to insight in seconds
             </h2>
           </div>
-
           <p
             className={cn(
               "max-w-md text-sm leading-relaxed text-muted-foreground lg:justify-self-end",
@@ -74,27 +72,61 @@ export function HowItWorksSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {steps.map((step, index) => (
-            <div
-              key={step.title}
-              className={cn(
-                "p-6 transition-all duration-1100 ease-out rounded-xl border border-border/40 bg-muted/20 hover:bg-muted/40 hover:-translate-y-1",
-                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-              )}
-              style={{ transitionDelay: isVisible ? `${index * 140}ms` : "0ms" }}
-            >
-              <div className="mb-4">
-                <step.icon className="h-6 w-6 text-muted-foreground" />
+        {/* Timeline */}
+        <div className="relative">
+
+          {/* ── Desktop: horizontal line ── */}
+          <div className="hidden lg:block absolute top-5.5 left-0 right-0 h-px bg-border/50" />
+          <div
+            className="hidden lg:block absolute top-5.5 left-0 h-px bg-foreground/50 transition-[width] duration-2500 ease-out"
+            style={{ width: isVisible ? "100%" : "0%" }}
+          />
+
+          {/* ── Mobile: vertical line ── */}
+          <div className="lg:hidden absolute left-[22px] top-0 bottom-0 w-px bg-border/50" />
+          <div
+            className="lg:hidden absolute left-[22px] top-0 w-px bg-foreground/50 transition-[height] duration-2500 ease-out"
+            style={{ height: isVisible ? "100%" : "0%" }}
+          />
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 lg:gap-6">
+            {steps.map((step, index) => (
+              <div
+                key={step.title}
+                className={cn(
+                  "relative flex lg:flex-col items-start gap-5 lg:gap-0 pl-14 lg:pl-0",
+                  "transition-all duration-700 ease-out",
+                  isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                )}
+                style={{ transitionDelay: isVisible ? `${200 + index * 180}ms` : "0ms" }}
+              >
+                {/* Dot */}
+                <div className={cn(
+                  "absolute left-0 lg:relative lg:left-auto lg:mb-6 lg:mx-auto",
+                  "flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
+                  "border border-border bg-background transition-all duration-700 ease-out",
+                  isVisible ? "scale-100 opacity-100" : "scale-75 opacity-0"
+                )}
+                  style={{ transitionDelay: isVisible ? `${300 + index * 180}ms` : "0ms" }}
+                >
+                  <step.icon className="h-4.5 w-4.5 text-foreground" />
+                </div>
+
+                {/* Content */}
+                <div className="lg:text-center lg:px-1 pt-0.5 lg:pt-0">
+                  <p className="text-[11px] font-mono text-muted-foreground/50 mb-1 tracking-widest">
+                    0{index + 1}
+                  </p>
+                  <h3 className="text-base font-semibold text-foreground mb-1.5 tracking-tight">
+                    {step.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {step.description}
+                  </p>
+                </div>
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2 tracking-tight">
-                {step.title}
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {step.description}
-              </p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </section>

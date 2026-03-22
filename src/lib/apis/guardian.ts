@@ -1,4 +1,4 @@
-import type { YearlyDataPoint } from "@/types/strata";
+import type { YearlyDataPoint } from "@/types/darwinly";
 
 interface GuardianResponse {
   response?: {

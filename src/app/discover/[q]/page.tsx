@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/darwinly/sidebar"
 import { Navbar } from "@/components/darwinly/navbar"
 import { SearchResults } from "@/components/darwinly/search-results"
+import { SearchLandingJourney } from "@/components/darwinly/search-landing-journey"
 import { Footer } from "@/components/darwinly/footer"
 import { cn } from "@/lib/utils"
 
@@ -72,8 +73,9 @@ export default function DiscoverPage({ params }: { params: Promise<{ q: string }
         )}
       >
         <Navbar isDesktopSidebarExpanded={isDesktopSidebarExpanded} />
+        <SearchLandingJourney />
         <main>
-          <SearchResults query={query} onBack={() => router.push("/")} />
+          <SearchResults query={query} onBack={() => router.back()} />
         </main>
         <Footer />
       </div>

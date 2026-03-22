@@ -9,9 +9,8 @@ import {
   BarChart3,
   Clock, 
   Heart,
-  LogIn, 
+  LogIn,
   LogOut,
-  UserPlus, 
   User,
   Menu,
   Layers,
@@ -299,7 +298,7 @@ function SidebarContent({
                 <ul className="space-y-1 pb-2">
                   {recentSearches.map((term, index) => (
                     <li key={`${term}-${index}`}>
-                      <div className="group flex items-center gap-1 rounded-lg px-1 py-1 transition-colors hover:bg-sidebar-accent">
+                      <div className="group flex items-center gap-1 rounded-lg px-1 py-1 transition-colors hover:bg-sidebar-accent overflow-hidden">
                         <button
                           onClick={() => onSearchHistoryClick(term)}
                           className="min-w-0 flex-1 text-left rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground truncate"
@@ -310,7 +309,7 @@ function SidebarContent({
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 shrink-0 text-muted-foreground opacity-70 transition-opacity hover:opacity-100"
+                          className="h-7 w-7 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-70 hover:!opacity-100 transition-opacity"
                           onClick={async (event) => {
                             event.stopPropagation()
                             onDeleteSearchHistory(term)
@@ -342,18 +341,20 @@ function SidebarContent({
             </ScrollArea>
           </div>
 
-          {/* Auth Buttons */}
-          <div className="mt-auto p-1 space-y-2">
+          {/* Auth */}
+          <div className="mt-auto p-1 pb-3">
             {user ? (
               <DropdownMenu onOpenChange={onProfileMenuOpenChange}>
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-3 rounded-lg border border-border bg-transparent px-3 py-2 text-left transition-colors hover:bg-sidebar-accent"
+                    className="flex w-full items-center gap-3 rounded-2xl bg-sidebar-accent px-3 py-2.5 text-left transition-colors hover:brightness-95"
                   >
-                    <Avatar className="h-9 w-9">
+                    <Avatar className="h-11 w-11 shrink-0">
                       <AvatarImage src={user.image ?? undefined} alt={user.name ?? "Logged in user"} />
-                      <AvatarFallback>{userInitials}</AvatarFallback>
+                      <AvatarFallback className="text-sm font-medium">
+                        {user.name ? userInitials : <User className="h-4 w-4" />}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-foreground">
@@ -364,11 +365,11 @@ function SidebarContent({
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent side="right" align="end" sideOffset={10} className="w-56">
-                  <DropdownMenuItem onSelect={() => router.push("/usage") }>
+                  <DropdownMenuItem onSelect={() => router.push("/usage")}>
                     <BarChart3 className="h-4 w-4" />
                     Usage
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => router.push("/favoritos") }>
+                  <DropdownMenuItem onSelect={() => router.push("/favoritos")}>
                     <Heart className="h-4 w-4" />
                     Starred
                   </DropdownMenuItem>
@@ -379,55 +380,42 @@ function SidebarContent({
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-2 border-border bg-transparent hover:bg-sidebar-accent"
-                  asChild
-                >
-                  <Link href="/sign-in">
-                    <LogIn className="h-4 w-4" />
-                    Log in
-                  </Link>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-2 border-border bg-transparent hover:bg-sidebar-accent"
-                  asChild
-                >
-                  <Link href="/sign-up">
-                    <UserPlus className="h-4 w-4" />
-                    Sign up
-                  </Link>
-                </Button>
-              </>
+              <Link
+                href="/sign-in"
+                className="flex w-full items-center gap-3 rounded-2xl bg-sidebar-accent px-3 py-2.5 transition-colors hover:brightness-95"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center">
+                  <LogIn className="h-5 w-5 text-muted-foreground" />
+                </span>
+                <span className="text-sm font-medium text-muted-foreground">Sign in</span>
+              </Link>
             )}
           </div>
         </>
       ) : (
-        <div className="mt-auto flex justify-center px-3 pb-4">
+        <div className="mt-auto p-1 pb-3 flex justify-center">
           {user ? (
             <DropdownMenu onOpenChange={onProfileMenuOpenChange}>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-transparent transition-colors hover:bg-sidebar-accent"
+                  className="flex h-16 w-16 items-center justify-center rounded-2xl bg-sidebar-accent transition-colors hover:brightness-95"
                   title={user.name ?? "Signed in user"}
                 >
-                  <Avatar className="h-9 w-9">
+                  <Avatar className="h-10 w-10">
                     <AvatarImage src={user.image ?? undefined} alt={user.name ?? "Logged in user"} />
-                    <AvatarFallback>
-                      <User className="h-4 w-4" />
+                    <AvatarFallback className="text-sm font-medium">
+                      {user.name ? userInitials : <User className="h-4 w-4" />}
                     </AvatarFallback>
                   </Avatar>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="right" align="end" sideOffset={10} className="w-56">
-                <DropdownMenuItem onSelect={() => router.push("/usage") }>
+                <DropdownMenuItem onSelect={() => router.push("/usage")}>
                   <BarChart3 className="h-4 w-4" />
                   Usage
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => router.push("/favoritos") }>
+                <DropdownMenuItem onSelect={() => router.push("/favoritos")}>
                   <Heart className="h-4 w-4" />
                   Starred
                 </DropdownMenuItem>
@@ -438,18 +426,13 @@ function SidebarContent({
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-11 w-11 border-border bg-transparent hover:bg-sidebar-accent"
+            <Link
+              href="/sign-in"
+              className="flex h-16 w-16 items-center justify-center rounded-2xl bg-sidebar-accent transition-colors hover:brightness-95"
               title="Sign in"
-              asChild
             >
-              <Link href="/sign-in">
-                <LogIn className="h-4 w-4" />
-                <span className="sr-only">Sign in</span>
-              </Link>
-            </Button>
+              <LogIn className="h-5 w-5 text-muted-foreground" />
+            </Link>
           )}
         </div>
       )}

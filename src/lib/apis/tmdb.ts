@@ -1,4 +1,4 @@
-import type { YearlySeries } from "@/types/strata";
+import type { YearlySeries } from "@/types/darwinly";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

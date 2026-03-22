@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { BookOpen, FlaskConical, Newspaper, Film, Globe, Sparkles } from "lucide-react"
+import { BookOpen, FlaskConical, Newspaper, Film, Globe, Sparkles, Github, TrendingUp, BarChart2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const features = [
@@ -40,6 +40,24 @@ const features = [
     title: "AI Narrative",
     description: "AI writes a historical narrative connecting all the data — key moments, paradoxes, and hidden patterns.",
     source: "Claude AI"
+  },
+  {
+    icon: Github,
+    title: "Developer Activity",
+    description: "Track when developers started building around a concept — commits, repos, and open-source momentum over time.",
+    source: "GitHub API"
+  },
+  {
+    icon: TrendingUp,
+    title: "Crypto Markets",
+    description: "Price history, market cap, and trading volume. See when a concept became a financial phenomenon.",
+    source: "CoinGecko"
+  },
+  {
+    icon: BarChart2,
+    title: "Macro Economics",
+    description: "World Bank indicators — GDP, inflation, and development data tied to when concepts reshaped economies.",
+    source: "World Bank"
   }
 ]
 
@@ -75,7 +93,7 @@ export function FeaturesSection() {
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           )}
         >
-          One search. Six dimensions of knowledge.
+          One search. Nine dimensions of knowledge.
         </h2>
 
         <p className="mx-auto mb-14 max-w-2xl text-center text-sm text-muted-foreground">

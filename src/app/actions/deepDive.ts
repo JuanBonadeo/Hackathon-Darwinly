@@ -16,7 +16,7 @@ import { fetchGitHubData, type GitHubData } from "@/lib/apis/github";
 import { detectGitHubRepo } from "./is-tech-query";
 
 import { fetchCryptoData, type CryptoData } from "@/lib/apis/coinmarketcap";
-import type { Artifact, TimelineAnnotation, YearlyDataPoint, YearlySeries } from "@/types/strata";
+import type { Artifact, TimelineAnnotation, YearlyDataPoint, YearlySeries } from "@/types/darwinly";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

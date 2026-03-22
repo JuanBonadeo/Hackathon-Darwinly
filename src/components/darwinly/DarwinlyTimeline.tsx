@@ -21,7 +21,7 @@ import {
   ChartTooltip,
   type ChartConfig,
 } from '@/components/ui/chart'
-import type { TimelineAnnotation } from '@/types/strata'
+import type { TimelineAnnotation } from '@/types/darwinly'
 
 type SourceKey = 'wikipedia' | 'books' | 'papers' | 'movies' | 'news'
 

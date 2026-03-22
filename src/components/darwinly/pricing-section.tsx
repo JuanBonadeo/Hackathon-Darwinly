@@ -12,12 +12,12 @@ const plans = [
     period: "forever",
     features: [
       "10 searches/day",
-      "All 6 data sources",
+      "All 9 data sources",
       "AI narrative",
       "Search history"
     ],
     cta: "Get Started",
-    popular: false
+    popular: true
   },
   {
     name: "Pro",
@@ -30,8 +30,8 @@ const plans = [
       "Priority API",
       "Early access to new sources"
     ],
-    cta: "Upgrade to Pro",
-    popular: true
+    cta: "Coming Soon",
+    popular: false
   }
 ]
 
@@ -70,26 +70,26 @@ export function PricingSection() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto items-stretch">
           {plans.map((plan, index) => (
             <div
               key={plan.name}
               className={cn(
-                "feature-card relative p-8 transition-all duration-1100 ease-out",
-                plan.popular 
-                  ? "border-foreground/30 ring-1 ring-foreground/10 pt-12" 
+                "feature-card relative flex flex-col p-8 pt-12 transition-all duration-1100 ease-out",
+                plan.popular
+                  ? "border-foreground/30 ring-1 ring-foreground/10"
                   : "border-border",
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               )}
               style={{ transitionDelay: isVisible ? `${index * 160}ms` : "0ms" }}
             >
-              {plan.popular && (
-                <div className="absolute left-1/2 top-3 -translate-x-1/2">
+              <div className="absolute left-1/2 top-3 -translate-x-1/2 h-6">
+                {plan.popular && (
                   <span className="bg-foreground text-background text-xs font-medium px-3 py-1 rounded-full">
                     Most popular
                   </span>
-                </div>
-              )}
+                )}
+              </div>
 
               <div className="text-center mb-6">
                 <h3 className="text-xl font-semibold text-foreground mb-2">
@@ -105,7 +105,7 @@ export function PricingSection() {
                 </div>
               </div>
 
-              <ul className="space-y-3 mb-8">
+              <ul className="flex-1 space-y-3 mb-8">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-center gap-3 text-sm text-muted-foreground">
                     <Check className="h-4 w-4 shrink-0 text-foreground" />
@@ -114,9 +114,11 @@ export function PricingSection() {
                 ))}
               </ul>
 
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full border-border hover:bg-secondary"
+                disabled={plan.name === "Pro"}
+                onClick={plan.name !== "Pro" ? () => window.scrollTo({ top: 0, behavior: "smooth" }) : undefined}
               >
                 {plan.cta}
               </Button>
