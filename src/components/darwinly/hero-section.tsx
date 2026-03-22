@@ -13,7 +13,6 @@ const TRENDING_CONCEPTS = [
   "Donald Trump",
   "Elon Musk",
   "Javier Milei",
-  "Quantum Computing",
   "Racism",
   "Ukraine War",
   "World War III",
@@ -27,7 +26,15 @@ interface HeroSectionProps {
 export function HeroSection({ onSearch }: HeroSectionProps) {
   const [searchValue, setSearchValue] = useState("")
   const [isVisible, setIsVisible] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640)
+    check()
+    window.addEventListener("resize", check)
+    return () => window.removeEventListener("resize", check)
+  }, [])
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -86,8 +93,8 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
               type="text"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              placeholder={'Try "artificial intelligence" or "climate change"...'}
-              className="w-full h-14 pl-5 pr-14 rounded-full bg-card/40 border border-border/40 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-transparent transition-all text-base shadow-[0_20px_50px_-20px_rgba(0,0,0,0.3)]"
+              placeholder={isMobile ? 'Try "artificial intelligence"...' : 'Try "artificial intelligence" or "climate change"...'}
+              className="w-full h-14 pl-5 pr-14 rounded-full bg-card border border-border text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-foreground/30 transition-all text-base shadow-[0_8px_32px_-8px_rgba(0,0,0,0.15),0_0_0_1px_rgba(0,0,0,0.04)]"
             />
             <button
               type="submit"

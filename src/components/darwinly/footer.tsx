@@ -96,9 +96,31 @@ export function Footer() {
 
         {/* Built With & Copyright */}
         <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-muted-foreground/60 font-light">
-            © 2026 Darwinly. All rights reserved.
-          </p>
+          <div className="flex flex-col items-center md:items-start gap-1">
+            <p className="text-xs text-muted-foreground/60 font-light">
+              © 2026 Darwinly. All rights reserved.
+            </p>
+            <p className="text-xs text-muted-foreground/50 font-light">
+              Made by{" "}
+              <a
+                href="https://github.com/JuanBonadeo"
+                target="_blank"
+                rel="noreferrer"
+                className="hover:text-foreground transition-colors"
+              >
+                Juan Bonadeo
+              </a>
+              {" & "}
+              <a
+                href="https://github.com/gonzacasermeiro"
+                target="_blank"
+                rel="noreferrer"
+                className="hover:text-foreground transition-colors"
+              >
+                Gonzalo Casermeiro
+              </a>
+            </p>
+          </div>
           <div className="flex items-center gap-2 flex-wrap justify-center">
             <span className="text-xs text-muted-foreground/60 font-light">Built with</span>
             {builtWith.map((tech, index) => (
