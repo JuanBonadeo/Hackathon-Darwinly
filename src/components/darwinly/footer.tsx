@@ -112,7 +112,7 @@ export function Footer() {
               </a>
               {" & "}
               <a
-                href="https://github.com/gonzacasermeiro"
+                href="https://github.com/Gonzacaser"
                 target="_blank"
                 rel="noreferrer"
                 className="hover:text-foreground transition-colors"
