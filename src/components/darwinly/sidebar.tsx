@@ -293,39 +293,30 @@ function SidebarContent({
               {recentSearches.length > 0 ? (
                 <ul className="space-y-1 pb-2">
                   {recentSearches.map((term, index) => (
-                    <li key={`${term}-${index}`}>
-                      <div className="group flex items-center gap-1 rounded-lg px-1 py-1 transition-colors hover:bg-sidebar-accent">
-                        <button
-                          onClick={() => onSearchHistoryClick(term)}
-                          className="min-w-0 flex-1 text-left rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground truncate"
-                        >
-                          {term}
-                        </button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-0 shrink-0 overflow-hidden text-muted-foreground group-hover:w-7 transition-all duration-150 hover:text-foreground"
-                          onClick={async (event) => {
-                            event.stopPropagation()
-                            onDeleteSearchHistory(term)
-
-                            if (!user) {
-                              return
-                            }
-
-                            try {
-                              await unlinkCurrentUserSearchByQuery(term)
-                            } catch (error) {
-                              console.error("Failed to unlink search from user history", error)
-                            }
-                          }}
-                          aria-label={`Delete search ${term}`}
-                          title="Delete search"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                    <li key={`${term}-${index}`} className="group relative">
+                      <button
+                        onClick={() => onSearchHistoryClick(term)}
+                        className="w-full text-left rounded-lg px-3 py-2 pr-8 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground truncate block"
+                      >
+                        {term}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.stopPropagation()
+                          onDeleteSearchHistory(term)
+                          if (!user) return
+                          try {
+                            await unlinkCurrentUserSearchByQuery(term)
+                          } catch (error) {
+                            console.error("Failed to unlink search from user history", error)
+                          }
+                        }}
+                        aria-label={`Delete search ${term}`}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:bg-sidebar-accent transition-opacity"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     </li>
                   ))}
                 </ul>
