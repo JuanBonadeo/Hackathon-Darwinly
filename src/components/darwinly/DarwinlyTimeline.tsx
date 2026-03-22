@@ -144,7 +144,7 @@ export function DarwinlyTimeline({ data, annotations = [] }: DarwinlyTimelinePro
               }}
             />
 
-            {annotations.slice(0, 3).map((annotation, i) => (
+            {annotations.filter(a => Number.isFinite(a.year)).slice(0, 3).map((annotation, i) => (
               <ReferenceLine
                 key={`${annotation.year}-${i}`}
                 x={annotation.year}

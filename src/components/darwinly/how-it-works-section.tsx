@@ -34,7 +34,10 @@ export function HowItWorksSection() {
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsVisible(entry.isIntersecting)
+        if (entry.isIntersecting) {
+          setIsVisible(true)
+          observer.disconnect()
+        }
       },
       { threshold: 0.02, rootMargin: "0px 0px -8% 0px" }
     )
@@ -78,54 +81,66 @@ export function HowItWorksSection() {
           {/* ── Desktop: horizontal line ── */}
           <div className="hidden lg:block absolute top-5.5 left-0 right-0 h-px bg-border/50" />
           <div
-            className="hidden lg:block absolute top-5.5 left-0 h-px bg-foreground/50 transition-[width] duration-2500 ease-out"
+            className="hidden lg:block absolute top-5.5 left-0 h-px bg-foreground/50 transition-[width] duration-2560 ease-linear"
             style={{ width: isVisible ? "100%" : "0%" }}
           />
 
           {/* ── Mobile: vertical line ── */}
-          <div className="lg:hidden absolute left-[22px] top-0 bottom-0 w-px bg-border/50" />
+          <div className="lg:hidden absolute left-5.5 top-0 bottom-0 w-px bg-border/50" />
           <div
-            className="lg:hidden absolute left-[22px] top-0 w-px bg-foreground/50 transition-[height] duration-2500 ease-out"
+            className="lg:hidden absolute left-5.5 top-0 w-px bg-foreground/50 transition-[height] duration-2560 ease-linear"
             style={{ height: isVisible ? "100%" : "0%" }}
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 lg:gap-6">
-            {steps.map((step, index) => (
-              <div
-                key={step.title}
-                className={cn(
-                  "relative flex lg:flex-col items-start gap-5 lg:gap-0 pl-14 lg:pl-0",
-                  "transition-all duration-700 ease-out",
-                  isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-                )}
-                style={{ transitionDelay: isVisible ? `${200 + index * 180}ms` : "0ms" }}
-              >
-                {/* Dot */}
-                <div className={cn(
-                  "absolute left-0 lg:relative lg:left-auto lg:mb-6 lg:mx-auto",
-                  "flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
-                  "border border-border bg-background transition-all duration-700 ease-out",
-                  isVisible ? "scale-100 opacity-100" : "scale-75 opacity-0"
-                )}
-                  style={{ transitionDelay: isVisible ? `${300 + index * 180}ms` : "0ms" }}
-                >
-                  <step.icon className="h-4.5 w-4.5 text-foreground" />
-                </div>
+            {steps.map((step, index) => {
+              // Line is 1600ms linear across 4 equal columns.
+              // Each dot center sits at (index + 0.5) / 4 of the total width.
+              const lineDuration = 2560
+              const dotDelay    = Math.round(lineDuration * (index + 0.5) / steps.length)
+              const contentDelay = dotDelay + 130
 
-                {/* Content */}
-                <div className="lg:text-center lg:px-1 pt-0.5 lg:pt-0">
-                  <p className="text-[11px] font-mono text-muted-foreground/50 mb-1 tracking-widest">
-                    0{index + 1}
-                  </p>
-                  <h3 className="text-base font-semibold text-foreground mb-1.5 tracking-tight">
-                    {step.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {step.description}
-                  </p>
+              return (
+                <div
+                  key={step.title}
+                  className="relative flex lg:flex-col items-start gap-5 lg:gap-0 pl-14 lg:pl-0"
+                >
+                  {/* Dot — pops in when the line reaches it */}
+                  <div
+                    className={cn(
+                      "absolute left-0 lg:relative lg:left-auto lg:mb-6 lg:mx-auto",
+                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
+                      "border border-border bg-background",
+                      "transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.34,1.3,0.64,1)]",
+                      isVisible ? "scale-100 opacity-100" : "scale-50 opacity-0"
+                    )}
+                    style={{ transitionDelay: isVisible ? `${dotDelay}ms` : "0ms" }}
+                  >
+                    <step.icon className="h-4.5 w-4.5 text-foreground" />
+                  </div>
+
+                  {/* Content — fades in just after the dot */}
+                  <div
+                    className={cn(
+                      "lg:text-center lg:px-1 pt-0.5 lg:pt-0",
+                      "transition-[opacity,transform] duration-500 ease-out",
+                      isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+                    )}
+                    style={{ transitionDelay: isVisible ? `${contentDelay}ms` : "0ms" }}
+                  >
+                    <p className="text-[11px] font-mono text-muted-foreground/50 mb-1 tracking-widest">
+                      0{index + 1}
+                    </p>
+                    <h3 className="text-base font-semibold text-foreground mb-1.5 tracking-tight">
+                      {step.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {step.description}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </div>

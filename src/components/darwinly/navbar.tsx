@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
+import Link from "next/link"
 import { ThemeToggle } from "./theme-toggle"
 import { cn } from "@/lib/utils"
 
@@ -30,10 +32,15 @@ export function Navbar({ isDesktopSidebarExpanded }: NavbarProps) {
           : "bg-transparent"
       )}
     >
-      <div className="flex items-center justify-end h-14 px-6">
-        <div className="flex items-center">
-          <ThemeToggle />
-        </div>
+      <div className="flex items-center justify-end h-14 px-4 gap-2">
+        <ThemeToggle />
+        <Link
+          href="/"
+          className="lg:hidden flex h-9 w-9 items-center justify-center rounded-xl bg-sidebar-accent transition-colors hover:brightness-95"
+          aria-label="Home"
+        >
+          <Image src="/logo.svg" alt="Darwinly" width={22} height={22} className="h-5.5 w-5.5 object-contain" />
+        </Link>
       </div>
     </header>
   )

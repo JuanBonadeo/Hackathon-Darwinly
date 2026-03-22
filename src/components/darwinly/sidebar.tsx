@@ -197,23 +197,19 @@ function SidebarContent({
   }
 
   const handleNavClick = (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    if (!href.startsWith("#")) {
-      return
-    }
-
-    const section = document.querySelector(href)
-    if (!section) {
-      return
-    }
+    if (!href.startsWith("#")) return
 
     event.preventDefault()
-    section.scrollIntoView({
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? "auto"
-        : "smooth",
-      block: "start",
-    })
-    onNavLinkClick?.()
+    const section = document.querySelector(href)
+    if (section) {
+      section.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        block: "start",
+      })
+      onNavLinkClick?.()
+    } else {
+      window.location.href = `/${href}`
+    }
   }
 
   return (
@@ -298,7 +294,7 @@ function SidebarContent({
                 <ul className="space-y-1 pb-2">
                   {recentSearches.map((term, index) => (
                     <li key={`${term}-${index}`}>
-                      <div className="group flex items-center gap-1 rounded-lg px-1 py-1 transition-colors hover:bg-sidebar-accent overflow-hidden">
+                      <div className="group flex items-center gap-1 rounded-lg px-1 py-1 transition-colors hover:bg-sidebar-accent">
                         <button
                           onClick={() => onSearchHistoryClick(term)}
                           className="min-w-0 flex-1 text-left rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground truncate"
@@ -309,7 +305,7 @@ function SidebarContent({
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-70 hover:!opacity-100 transition-opacity"
+                          className="h-7 w-0 shrink-0 overflow-hidden text-muted-foreground group-hover:w-7 transition-all duration-150 hover:text-foreground"
                           onClick={async (event) => {
                             event.stopPropagation()
                             onDeleteSearchHistory(term)
