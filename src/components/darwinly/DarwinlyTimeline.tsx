@@ -100,9 +100,9 @@ export function DarwinlyTimeline({ data, annotations = [] }: DarwinlyTimelinePro
           {hasAnnotations && ". Hover on marked years to see what happened"}
         </p>
       </CardHeader>
-      <CardContent className="pt-4">
+      <CardContent className="px-0 pt-4 pb-4">
         <ChartContainer config={chartConfig} className="h-80 w-full">
-          <LineChart data={chartData} margin={{ left: 12, right: 12, top: 24, bottom: 8 }}>
+          <LineChart data={chartData} margin={{ left: 0, right: 12, top: 24, bottom: 8 }}>
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="year"
@@ -152,12 +152,6 @@ export function DarwinlyTimeline({ data, annotations = [] }: DarwinlyTimelinePro
                 strokeDasharray="5 3"
                 strokeWidth={2}
                 ifOverflow="extendDomain"
-                label={{
-                  value: ANNOTATION_LABELS[annotation.type],
-                  position: 'top',
-                  fontSize: 10,
-                  fill: ANNOTATION_COLORS[annotation.type],
-                }}
               />
             ))}
 
