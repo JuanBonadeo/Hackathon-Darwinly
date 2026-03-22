@@ -39,7 +39,7 @@ export function Navbar({ isDesktopSidebarExpanded }: NavbarProps) {
           className="lg:hidden flex h-9 w-9 items-center justify-center rounded-xl bg-sidebar-accent transition-colors hover:brightness-95"
           aria-label="Home"
         >
-          <Image src="/logo.svg" alt="Darwinly" width={22} height={22} className="h-5.5 w-5.5 object-contain" />
+          <Image src="/logo.svg" alt="Darwinly" width={25} height={25} className="h-6.25 w-6.25 object-contain" />
         </Link>
       </div>
     </header>

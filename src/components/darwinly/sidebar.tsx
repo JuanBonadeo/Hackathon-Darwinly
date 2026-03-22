@@ -415,10 +415,10 @@ function SidebarContent({
           ) : (
             <Link
               href="/sign-in"
-              className="flex h-16 w-16 items-center justify-center rounded-2xl bg-sidebar-accent transition-colors hover:brightness-95"
+              className="flex h-16 w-16 items-center justify-center rounded-2xl bg-sidebar-accent transition-colors hover:brightness-95 group"
               title="Sign in"
             >
-              <LogIn className="h-5 w-5 text-muted-foreground" />
+              <LogIn className="h-7 w-7 text-muted-foreground group-hover:text-foreground transition-colors" />
             </Link>
           )}
         </div>
