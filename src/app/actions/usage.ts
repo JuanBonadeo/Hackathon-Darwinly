@@ -18,5 +18,5 @@ export async function getUsageStatus(): Promise<{ used: number; remaining: numbe
     "unknown";
 
   const identifier = userId ? `user:${userId}` : `ip:${ip}`;
-  return peekRateLimit(identifier);
+  return await peekRateLimit(identifier);
 }

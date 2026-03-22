@@ -11,18 +11,17 @@ interface UsageState {
 }
 
 function BatteryIcon({ remaining, limit }: { remaining: number; limit: number }) {
-  const segments = limit
-  const filled = remaining
+  const pct = limit > 0 ? remaining / limit : 0
 
-  const W = 36
+  const W = 38
   const H = 20
   const tipW = 4
-  const tipH = 8
+  const tipH = 7
   const pad = 3
-  const segGap = 1.5
-  const totalGaps = segments - 1
-  const availW = W - pad * 2 - totalGaps * segGap
-  const segW = availW / segments
+  const innerW = W - pad * 2
+  const innerH = H - pad * 2
+  const fillW = Math.max(0, innerW * pct)
+  const r = 1.5
 
   return (
     <svg
@@ -37,10 +36,10 @@ function BatteryIcon({ remaining, limit }: { remaining: number; limit: number })
       <rect
         x={0.5} y={0.5}
         width={W - 1} height={H - 1}
-        rx={3}
+        rx={3.5}
         stroke="currentColor"
         strokeWidth={1}
-        className="text-foreground/40"
+        className="text-foreground/35"
         fill="none"
       />
       {/* Tip */}
@@ -49,27 +48,18 @@ function BatteryIcon({ remaining, limit }: { remaining: number; limit: number })
         width={tipW - 0.5} height={tipH}
         rx={1.5}
         fill="currentColor"
-        className="text-foreground/30"
+        className="text-foreground/25"
       />
-      {/* Segments */}
-      {Array.from({ length: segments }).map((_, i) => {
-        const isFilled = i < filled
-        const x = pad + i * (segW + segGap)
-        const y = pad
-        const segH = H - pad * 2
-        return (
-          <rect
-            key={i}
-            x={x}
-            y={y}
-            width={segW}
-            height={segH}
-            rx={0.75}
-            fill="currentColor"
-            className={isFilled ? "text-foreground/90" : "text-foreground/10"}
-          />
-        )
-      })}
+      {/* Fill — solid, no segments */}
+      {fillW > 0 && (
+        <rect
+          x={pad} y={pad}
+          width={fillW} height={innerH}
+          rx={r}
+          fill="currentColor"
+          className="text-foreground/85"
+        />
+      )}
     </svg>
   )
 }

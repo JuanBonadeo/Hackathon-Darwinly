@@ -16,7 +16,7 @@ import { fetchGitHubData, type GitHubData } from "@/lib/apis/github";
 import { detectGitHubRepo } from "./is-tech-query";
 
 import { fetchCryptoData, type CryptoData } from "@/lib/apis/coinmarketcap";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, peekRateLimit } from "@/lib/rate-limit";
 import type { Artifact, TimelineAnnotation, YearlyDataPoint, YearlySeries } from "@/types/darwinly";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -248,16 +248,12 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
     // Auth unavailable — proceed without linking user
   }
 
-  // ─── Rate limit ─────────────────────────────────────────────────────────────
+  // ─── Build rate limit identifier ────────────────────────────────────────────
   const headersList = await headers();
   const ip = headersList.get("x-forwarded-for")?.split(",")[0]?.trim()
     ?? headersList.get("x-real-ip")
     ?? "unknown";
   const identifier = userId ? `user:${userId}` : `ip:${ip}`;
-  const rateLimit = checkRateLimit(identifier);
-  if (!rateLimit.allowed) {
-    throw new Error("RATE_LIMIT_EXCEEDED");
-  }
 
   // ─── DB cache hit ───────────────────────────────────────────────────────────
   const existing = await prisma.search.findUnique({
@@ -295,7 +291,14 @@ export async function deepDiveAction(query: string): Promise<DeepDiveFullRespons
       crypto = await fetchCryptoData(cacheQuery);
     }
 
-    return { ...cached, github, crypto, fromCache: true, userSearched, usage: { used: rateLimit.used, remaining: rateLimit.remaining, limit: rateLimit.limit } };
+    const peek = await peekRateLimit(identifier);
+    return { ...cached, github, crypto, fromCache: true, userSearched, usage: { used: peek.used, remaining: peek.remaining, limit: peek.limit } };
+  }
+
+  // ─── Rate limit (only for new queries, not cache hits) ──────────────────────
+  const rateLimit = await checkRateLimit(identifier);
+  if (!rateLimit.allowed) {
+    throw new Error("RATE_LIMIT_EXCEEDED");
   }
 
   // ─── Fetch sources ─────────────────────────────────────────────────────────

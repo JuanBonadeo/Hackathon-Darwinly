@@ -97,3 +97,12 @@ model Verification {
   @@index([identifier])
   @@map("verification")
 }
+
+model DailyUsage {
+  identifier String
+  date       String
+  count      Int    @default(0)
+
+  @@id([identifier, date])
+  @@map("daily_usage")
+}
